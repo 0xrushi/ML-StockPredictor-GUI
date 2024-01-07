@@ -110,7 +110,7 @@ if st.button("Get data"):
 
         plot_roc_curve(y_train, clf.predict_proba(x_train)[:, 1], 'ROC Curve for Training Data')
         plot_roc_curve(y_test, clf.predict_proba(x_test)[:, 1], 'ROC Curve for Test Data')
-        plot_feature_importances(clf)
+        plot_feature_importances(clf, x_train)
 
     df_test = df[df['Date'] >= train_until].reset_index(drop=True)
     df_test['pred_prob'] = clf.predict_proba(x_test)[:, 1]

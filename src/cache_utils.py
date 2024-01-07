@@ -7,7 +7,7 @@ import pickle
 def save_model_and_training_date(stock, model):
     with open(f"models/{stock}_model.pkl", "wb") as f:
         pickle.dump(model, f)
-    with open("training_dates.txt", "a") as file:
+    with open("cache/training_dates.txt", "a") as file:
         file.write(f"{stock},{datetime.datetime.now()}\n")
 
 def should_retrain(stock):

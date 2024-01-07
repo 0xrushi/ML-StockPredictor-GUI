@@ -1,2 +1,3 @@
 cache
 models
+src/__pycache__/*

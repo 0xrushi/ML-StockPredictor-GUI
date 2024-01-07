@@ -73,14 +73,14 @@ def plot_roc_curve(y_true, y_scores, title):
 
     return
 
-def plot_feature_importances(clf):
+def plot_feature_importances(clf, x):
     feature_importances = clf.feature_importances_
     sorted_indices = feature_importances.argsort()[::-1]
 
     plt.figure(figsize=(10, 6))
     plt.title("Feature Importances in The Classifier")
-    plt.bar(range(x_train.shape[1]), feature_importances[sorted_indices], align='center')
-    plt.xticks(range(x_train.shape[1]), x_train.columns[sorted_indices], rotation=90)
+    plt.bar(range(x.shape[1]), feature_importances[sorted_indices], align='center')
+    plt.xticks(range(x.shape[1]), x.columns[sorted_indices], rotation=90)
     plt.ylabel('Importance')
     
     # Display the plot in Streamlit
