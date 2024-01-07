@@ -16,6 +16,10 @@ import numpy as np
 from sklearn.metrics import roc_curve, auc
 import plotly.graph_objects as go
 import pickle
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
 
 def plot_confusion_matrix(y_true, y_pred, title, normalize):
 
@@ -111,6 +115,7 @@ def plot_candlesticks(df_test):
         .agg(['first', 'last'])
     )
 
+    last_date_included = False
     for idx, row in df_pattern.iterrows():
         fig.add_vrect(
             x0=row['first'],
@@ -118,6 +123,20 @@ def plot_candlesticks(df_test):
             line_width=0,
             fillcolor='green',
             opacity=0.2,
+        )
+
+        logger.debug(f"first : {row['first']} last: {row['last']}")
+        if df_test.iloc[-1]['Date'] >= row['first'] and df_test.iloc[-1]['Date'] <= row['last'] and (row['last']!=row['first']):
+            last_date_included = True
+    
+    logger.debug(last_date_included)
+            
+    # Check if the last entry has pred as True and is not included in any green fill
+    if df_test.iloc[-1]['pred'] and not last_date_included:
+        fig.add_vline(
+            x=df_test.iloc[-1]['Date'], 
+            line_width=5, 
+            line_color='green'
         )
 
     fig.update_layout(
