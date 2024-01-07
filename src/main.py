@@ -98,7 +98,7 @@ if st.button("Test Model", key="btn2"):
     # Format the date as a string if necessary
     test_until = test_until.strftime('%Y-%m-%d')
 
-    df2 = yf.download("NVDA").reset_index()
+    df2 = yf.download(selected_option).reset_index()
     df2 = create_feature_cols(df2)
 
     # show prediction on last 30 days
