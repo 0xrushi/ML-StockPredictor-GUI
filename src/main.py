@@ -107,11 +107,9 @@ if st.button("Train Model"):
     y_train_pred = clf.predict(x_train)
     y_test_pred = clf.predict(x_test)
 
-    # Calculate accuracy and precision for training data
     train_accuracy = accuracy_score(y_train, y_train_pred)
     train_precision = precision_score(y_train, y_train_pred)
 
-    # Calculate accuracy and precision for test data
     test_accuracy = accuracy_score(y_test, y_test_pred)
     test_precision = precision_score(y_test, y_test_pred)
 
