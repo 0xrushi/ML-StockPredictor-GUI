@@ -6,7 +6,6 @@ import yfinance as yf
 import datetime
 import os
 
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score
 import matplotlib.pyplot as plt
@@ -19,6 +18,55 @@ import pickle
 from cache_utils import save_model_and_training_date, should_retrain
 from plot_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances, plot_candlesticks
 from utils import create_feature_cols, get_sp500_tickers
+
+def backtest_strategy(df):
+    # Identify the start and end of each green-filled block
+    green_blocks = (
+        df[df['pred']]
+        .groupby((~df['pred']).cumsum())
+        .agg(start=('Date', 'first'), end=('Date', 'last'))
+    )
+
+    trade_count = 0
+    total_profit = 0
+    trades = []
+
+    # Iterate over each green block
+    for _, block in green_blocks.iterrows():
+        start_date = block['start']
+        end_date = block['end']
+
+        # Get close prices for the start and end of the block
+        buy_price = df.loc[df['Date'] == start_date, 'Close'].iloc[0]
+        sell_price = df.loc[df['Date'] == end_date, 'Close'].iloc[0]
+
+        # Calculate profit for this block and add to total profit
+        profit = sell_price - buy_price
+        total_profit += profit
+
+        trades.append({'Date': start_date, 'Profit': profit})
+        trade_count += 1
+        st.write(f"Trade {trade_count}: Buy on {start_date} at \${buy_price}, Sell on {end_date} at \${sell_price}, Profit: \${profit}")
+
+    trades_df = pd.DataFrame(trades)
+
+    # Get the total number of trades
+    total_trades = len(trades_df)
+
+    # Calculate the number of unique weeks, months, and days
+    num_weeks = len(trades_df['Date'].dt.isocalendar().week.unique())
+    num_months = len(trades_df['Date'].dt.to_period('M').unique())
+    num_days = len(trades_df['Date'].dt.to_period('D').unique())
+
+    # Calculate average trades
+    avg_trades_per_week = total_trades / num_weeks
+    avg_trades_per_month = total_trades / num_months
+    avg_trades_per_day = total_trades / num_days
+
+    st.write(f"Total Profit: ${total_profit}")
+    st.write(f"Average Trades per Week: {avg_trades_per_week}")
+    st.write(f"Average Trades per Month: {avg_trades_per_month}")
+    st.write(f"Average Trades per Day: {avg_trades_per_day}")
 
 options = get_sp500_tickers()
 
@@ -86,6 +134,11 @@ if st.button("Train Model"):
         plot_roc_curve(y_train, clf.predict_proba(x_train)[:, 1], 'ROC Curve for Training Data')
         plot_roc_curve(y_test, clf.predict_proba(x_test)[:, 1], 'ROC Curve for Test Data')
         plot_feature_importances(clf, x_train)
+    
+    df_test = df[df['Date'] >= train_until].reset_index(drop=True)
+    df_test['pred_prob'] = clf.predict_proba(x_test)[:, 1]
+    df_test['pred'] = df_test['pred_prob'] > 0.5
+    backtest_strategy(df_test)
 
 if st.button("Test Model", key="btn2"):
 
