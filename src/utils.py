@@ -6,6 +6,7 @@ import yfinance as yf
 import datetime
 import os
 import io
+import nsepython
 
 # Feature deriving
 # Distance from the moving averages
@@ -35,7 +36,6 @@ def create_feature_cols(df):
 #     return df['Symbol'].tolist()
 
 def get_sp500_tickers():
-    url = 'https://www.nseindia.com/content/indices/ind_nifty50list.csv'
-    s = requests.get(url).content
-    df = pd.read_csv(io.StringIO(s.decode('utf-8')))
-    return df['Symbol'].tolist()
+    symbols = nsepython.nse_eq_symbols()
+    symbols = [s + ".NS" for s in symbols]
+    return symbols
