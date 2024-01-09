@@ -68,6 +68,20 @@ def backtest_strategy(df):
     st.write(f"Average Trades per Month: {avg_trades_per_month}")
     st.write(f"Average Trades per Day: {avg_trades_per_day}")
 
+    # Calculate cumulative profit
+    trades_df['Cumulative Profit'] = trades_df['Profit'].cumsum()
+
+    # Plotting
+    fig, ax1 = plt.subplots()
+
+    # Plot cumulative profit
+    ax1.plot(trades_df['Date'], trades_df['Cumulative Profit'], color='green', label='Cumulative Profit')
+    ax1.set_xlabel('Date')
+    ax1.set_ylabel('Cumulative Profit')
+    ax1.legend(loc='upper left')
+
+    st.pyplot(plt)
+
 options = get_sp500_tickers()
 
 selected_option = st.selectbox("Select an stock", options, index=0, key="my_selectbox")
