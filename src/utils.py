@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import yfinance as yf
 import datetime
 import os
-
+import io
 
 # Feature deriving
 # Distance from the moving averages
