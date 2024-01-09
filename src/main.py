@@ -70,7 +70,7 @@ def backtest_strategy(df):
 
 options = get_sp500_tickers()
 
-selected_option = st.selectbox("Select an option", options, index=0, key="my_selectbox")
+selected_option = st.selectbox("Select an stock", options, index=0, key="my_selectbox")
 
 st.write("You selected:", selected_option)
 
