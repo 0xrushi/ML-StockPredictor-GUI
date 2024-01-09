@@ -3,8 +3,12 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
-import datetime
+from datetime import datetime, date, timedelta
 import os
+from backtrader_plotly.plotter import BacktraderPlotly
+from backtrader_plotly.scheme import PlotScheme
+import backtrader.analyzers as btanalyzers
+import plotly.io
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score
@@ -18,8 +22,114 @@ import pickle
 from cache_utils import save_model_and_training_date, should_retrain
 from plot_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances, plot_candlesticks
 from utils import create_feature_cols, get_sp500_tickers
+import backtrader as bt
+
+# Custom data feed class
+class CustomData(bt.feeds.PandasData):
+    # Add a 'lines' definition for your custom data line
+    lines = ('pred',)
+
+    # add the parameter to the parameters inherited from the base class
+    params = (('pred', -1),)
+
+class GreenBlockStrategy(bt.Strategy):
+    def __init__(self):
+        self.data_pred = self.datas[0].pred  # Assuming 'pred' is part of the data feed
+        self.trades = []
+
+    def notify_trade(self, trade):
+        if trade.isclosed:
+            self.trades.append({'date': self.data.datetime.date(0), 'profit': trade.pnl})
+
+
+    def next(self):
+        # Check if today is the start of a green block
+        if not self.position and self.data_pred[0] and not self.data_pred[-1]:
+            self.buy(size=1, price=self.data.open[0], exectype=bt.Order.Market)
+            self.log(f'BUY EXECUTED, Price: {self.data.open[0]}, Date: {self.data.datetime.date(0)}')
+
+        # Check if today is the end of a green block
+        elif self.position and not self.data_pred[0] and self.data_pred[-1]:
+            self.sell(size=1, price=self.data.close[0], exectype=bt.Order.Market)
+            self.log(f'SELL EXECUTED, Price: {self.data.close[0]}, Date: {self.data.datetime.date(0)}')
+
+    def log(self, txt, dt=None):
+        dt = dt or self.datas[0].datetime.date(0)
+        st.write(f'{dt.isoformat()} {txt}')
+
 
 def backtest_strategy(df):
+    # Create a Cerebro engine instance
+    cerebro = bt.Cerebro()
+    initial_cash = 600.0
+    cerebro.broker.setcash(initial_cash)
+    cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
+    cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='tradeanalyzer')
+
+
+    # Load data
+    df['Date'] = pd.to_datetime(df['Date'])
+    df.set_index('Date', inplace=True)
+    datafeed = CustomData(dataname=df)
+
+    # Add the data feed
+    cerebro.adddata(datafeed)
+
+    # Add the strategy
+    cerebro.addstrategy(GreenBlockStrategy)
+
+    # Run the strategy
+    results = cerebro.run()
+    strat = results[0]
+
+    # Drawdown analysis
+    drawdown_info = strat.analyzers.drawdown.get_analysis()
+    st.write(f"Max Drawdown: {drawdown_info.max.drawdown}%")
+
+    # Trade analysis
+    trade_info = strat.analyzers.tradeanalyzer.get_analysis()
+    total_trades = trade_info.total.closed
+    trade_dates = [t['date'] for t in strat.trades]
+    num_days = (max(trade_dates) - min(trade_dates)).days
+    num_weeks = num_days / 7
+    num_months = num_days / 30  # Approximation
+
+    avg_trades_per_day = total_trades / num_days
+    avg_trades_per_week = total_trades / num_weeks
+    avg_trades_per_month = total_trades / num_months
+
+    # Total Profit
+    final_portfolio_value = cerebro.broker.getvalue()
+    total_profit = final_portfolio_value - initial_cash
+
+    # Total Profit Percentage
+    total_profit_percent = (total_profit / initial_cash) * 100
+
+    # Print results
+
+    st.write(f"Average Trades per Day: {avg_trades_per_day}")
+    st.write(f"Average Trades per Week: {avg_trades_per_week}")
+    st.write(f"Average Trades per Month: {avg_trades_per_month}")
+    st.write(f"Total Profit: \${total_profit}")
+    st.write(f"Total Profit (%): {total_profit_percent}%")
+
+    # define plot scheme with new additional scheme arguments
+    scheme = PlotScheme(decimal_places=5, max_legend_text_width=16)
+
+    figs = cerebro.plot(BacktraderPlotly(show=False, scheme=scheme))
+
+    # directly manipulate object using methods provided by `plotly`
+    for i, each_run in enumerate(figs):
+        for j, each_strategy_fig in enumerate(each_run):
+            # open plot in browser
+            # st.plotly_chart(each_strategy_fig, use_container_width=False)
+            filename = f'plot_{i}_{j}.html'
+            plotly.io.write_html(each_strategy_fig, filename, full_html=True)
+
+            # Generate a link to open the plot in a new tab
+            st.markdown(f'[Open Plot {i}-{j}](/{filename})', unsafe_allow_html=True)
+
+def backtest_strategy_old(df):
     # Identify the start and end of each green-filled block
     green_blocks = (
         df[df['pred']]
@@ -88,7 +198,7 @@ selected_option = st.selectbox("Select an stock", options, index=0, key="my_sele
 
 st.write("You selected:", selected_option)
 
-train_until = datetime.date(2019, 1, 1)
+train_until = date(2019, 1, 1)
 selected_date = st.date_input("Train Until: ", train_until)
 train_until = selected_date.strftime('%Y-%m-%d')
 
@@ -159,9 +269,9 @@ with st.expander("Test Model"):
         with open(f"models/{selected_option}_model.pkl", "rb") as f:
             clf = pickle.load(f)
 
-        current_date = datetime.datetime.now()
+        current_date = datetime.now()
         # Subtract last_n_days days from the current date
-        test_until = current_date - datetime.timedelta(days=int(last_n_days))
+        test_until = current_date - timedelta(days=int(last_n_days))
         # Format the date as a string if necessary
         test_until = test_until.strftime('%Y-%m-%d')
 
