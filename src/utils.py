@@ -27,9 +27,15 @@ def create_feature_cols(df):
     df['price_above_ma'] = df['Close'] > df['target_ma']
     return df
 
+# def get_sp500_tickers():
+#     res = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+#     soup = BeautifulSoup(res.content,'lxml')
+#     table = soup.find_all('table')[0]
+#     df = pd.read_html(str(table))[0]
+#     return df['Symbol'].tolist()
+
 def get_sp500_tickers():
-    res = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
-    soup = BeautifulSoup(res.content,'lxml')
-    table = soup.find_all('table')[0]
-    df = pd.read_html(str(table))[0]
+    url = 'https://www.nseindia.com/content/indices/ind_nifty50list.csv'
+    s = requests.get(url).content
+    df = pd.read_csv(io.StringIO(s.decode('utf-8')))
     return df['Symbol'].tolist()
