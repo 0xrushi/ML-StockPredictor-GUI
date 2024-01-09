@@ -36,8 +36,8 @@ def backtest_strategy(df):
         start_date = block['start']
         end_date = block['end']
 
-        # Get close prices for the start and end of the block
-        buy_price = df.loc[df['Date'] == start_date, 'Close'].iloc[0]
+        # Get open prices for the start and close price for the end of the block
+        buy_price = df.loc[df['Date'] == start_date, 'Open'].iloc[0]
         sell_price = df.loc[df['Date'] == end_date, 'Close'].iloc[0]
 
         # Calculate profit for this block and add to total profit
