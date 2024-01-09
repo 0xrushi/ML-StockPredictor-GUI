@@ -138,35 +138,37 @@ if st.button("Train Model"):
     df_test['pred'] = df_test['pred_prob'] > 0.5
     backtest_strategy(df_test)
 
-if st.button("Test Model", key="btn2"):
+with st.expander("Test Model"):
+    last_n_days = st.text_input("Last N Days", "30")
+    if st.button("Test Model", key="btn2"):
 
-    with open(f"models/{selected_option}_model.pkl", "rb") as f:
-        clf = pickle.load(f)
+        with open(f"models/{selected_option}_model.pkl", "rb") as f:
+            clf = pickle.load(f)
 
-    current_date = datetime.datetime.now()
-    # Subtract 30 days from the current date
-    test_until = current_date - datetime.timedelta(days=30)
-    # Format the date as a string if necessary
-    test_until = test_until.strftime('%Y-%m-%d')
+        current_date = datetime.datetime.now()
+        # Subtract last_n_days days from the current date
+        test_until = current_date - datetime.timedelta(days=int(last_n_days))
+        # Format the date as a string if necessary
+        test_until = test_until.strftime('%Y-%m-%d')
 
-    df2 = yf.download(selected_option).reset_index()
-    df2 = create_feature_cols(df2)
+        df2 = yf.download(selected_option).reset_index()
+        df2 = create_feature_cols(df2)
 
-    # show prediction on last 30 days
-    df_test = df2[df2['Date'] > test_until].reset_index(drop=True)
-    df_test['pred_prob'] = clf.predict_proba(df_test[['feat_dist_from_ma_10', 'feat_dist_from_ma_20', 'feat_dist_from_ma_30',
-       'feat_dist_from_ma_50', 'feat_dist_from_ma_100', 'feat_dist_from_max_3',
-       'feat_dist_from_min_3', 'feat_dist_from_max_5', 'feat_dist_from_min_5',
-       'feat_dist_from_max_10', 'feat_dist_from_min_10',
-       'feat_dist_from_max_15', 'feat_dist_from_min_15',
-       'feat_dist_from_max_20', 'feat_dist_from_min_20',
-       'feat_dist_from_max_30', 'feat_dist_from_min_30',
-       'feat_dist_from_max_50', 'feat_dist_from_min_50',
-       'feat_dist_from_max_100', 'feat_dist_from_min_100', 'feat_price_dist_1',
-       'feat_price_dist_2', 'feat_price_dist_3', 'feat_price_dist_4',
-       'feat_price_dist_5', 'feat_price_dist_10', 'feat_price_dist_15',
-       'feat_price_dist_20', 'feat_price_dist_30', 'feat_price_dist_50',
-       'feat_price_dist_100']])[:, 1]
-    df_test['pred'] = df_test['pred_prob'] > 0.5
+        # show prediction on last last_n_days days
+        df_test = df2[df2['Date'] > test_until].reset_index(drop=True)
+        df_test['pred_prob'] = clf.predict_proba(df_test[['feat_dist_from_ma_10', 'feat_dist_from_ma_20', 'feat_dist_from_ma_30',
+        'feat_dist_from_ma_50', 'feat_dist_from_ma_100', 'feat_dist_from_max_3',
+        'feat_dist_from_min_3', 'feat_dist_from_max_5', 'feat_dist_from_min_5',
+        'feat_dist_from_max_10', 'feat_dist_from_min_10',
+        'feat_dist_from_max_15', 'feat_dist_from_min_15',
+        'feat_dist_from_max_20', 'feat_dist_from_min_20',
+        'feat_dist_from_max_30', 'feat_dist_from_min_30',
+        'feat_dist_from_max_50', 'feat_dist_from_min_50',
+        'feat_dist_from_max_100', 'feat_dist_from_min_100', 'feat_price_dist_1',
+        'feat_price_dist_2', 'feat_price_dist_3', 'feat_price_dist_4',
+        'feat_price_dist_5', 'feat_price_dist_10', 'feat_price_dist_15',
+        'feat_price_dist_20', 'feat_price_dist_30', 'feat_price_dist_50',
+        'feat_price_dist_100']])[:, 1]
+        df_test['pred'] = df_test['pred_prob'] > 0.5
 
-    plot_candlesticks(df_test)
+        plot_candlesticks(df_test)
