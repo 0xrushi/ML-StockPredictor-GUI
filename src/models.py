@@ -78,7 +78,7 @@ def train_model(selected_option, train_until):
         'y_train': y_train
     }
 
-def test_model(selected_option, last_n_days):
+def test_model(selected_option, last_n_days, download_end_date=datetime.now().strftime('%Y-%m-%d')):
     with open(f"models/{selected_option}_model.pkl", "rb") as f:
         clf = pickle.load(f)
 
@@ -88,7 +88,7 @@ def test_model(selected_option, last_n_days):
     # Format the date as a string if necessary
     test_till = test_till.strftime('%Y-%m-%d')
 
-    df2 = yf.download(selected_option).reset_index()
+    df2 = yf.download(selected_option, end=download_end_date).reset_index()
     df2 = create_feature_cols(df2)
 
     # show prediction on last last_n_days days
