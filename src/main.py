@@ -44,12 +44,12 @@ class GreenBlockStrategy(bt.Strategy):
 
     def next(self):
         # Check if today is the start of a green block
-        if not self.position and self.data_pred[0] and not self.data_pred[-1]:
+        if not self.position and self.data_pred[0]:
             self.buy(size=1, price=self.data.open[0], exectype=bt.Order.Market)
             self.log(f'BUY EXECUTED, Price: {self.data.open[0]}, Date: {self.data.datetime.date(0)}')
 
         # Check if today is the end of a green block
-        elif self.position and not self.data_pred[0] and self.data_pred[-1]:
+        elif self.position and not self.data_pred[0]:
             self.sell(size=1, price=self.data.close[0], exectype=bt.Order.Market)
             self.log(f'SELL EXECUTED, Price: {self.data.close[0]}, Date: {self.data.datetime.date(0)}')
 
@@ -118,11 +118,29 @@ def backtest_strategy(df):
 
     figs = cerebro.plot(BacktraderPlotly(show=False, scheme=scheme))
 
-    # directly manipulate object using methods provided by `plotly`
+
+    df['Date'] = df.index
+    # Determine the pattern periods to overlay
+    df_pattern = (
+        df[df['pred']]
+        .groupby((~df['pred']).cumsum())
+        ['Date']
+        .agg(['first', 'last'])
+    )
+
+    # Modify the plot with green overlays
     for i, each_run in enumerate(figs):
         for j, each_strategy_fig in enumerate(each_run):
-            # open plot in browser
-            # st.plotly_chart(each_strategy_fig, use_container_width=False)
+            for idx, row in df_pattern.iterrows():
+                each_strategy_fig.add_vrect(
+                    x0=row['first'],
+                    x1=row['last'],
+                    line_width=0,
+                    fillcolor='green',
+                    opacity=0.2,
+                )
+
+            # Save the modified figure
             filename = f'plot_{i}_{j}.html'
             plotly.io.write_html(each_strategy_fig, filename, full_html=True)
 
