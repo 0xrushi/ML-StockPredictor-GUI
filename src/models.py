@@ -84,15 +84,15 @@ def test_model(selected_option, last_n_days):
 
     current_date = datetime.now()
     # Subtract last_n_days days from the current date
-    test_until = current_date - timedelta(days=int(last_n_days))
+    test_till = current_date - timedelta(days=int(last_n_days))
     # Format the date as a string if necessary
-    test_until = test_until.strftime('%Y-%m-%d')
+    test_till = test_till.strftime('%Y-%m-%d')
 
     df2 = yf.download(selected_option).reset_index()
     df2 = create_feature_cols(df2)
 
     # show prediction on last last_n_days days
-    df_test = df2[df2['Date'] > test_until].reset_index(drop=True)
+    df_test = df2[df2['Date'] > test_till].reset_index(drop=True)
     df_test['pred_prob'] = clf.predict_proba(df_test[['feat_dist_from_ma_10', 'feat_dist_from_ma_20', 'feat_dist_from_ma_30',
     'feat_dist_from_ma_50', 'feat_dist_from_ma_100', 'feat_dist_from_max_3',
     'feat_dist_from_min_3', 'feat_dist_from_max_5', 'feat_dist_from_min_5',
