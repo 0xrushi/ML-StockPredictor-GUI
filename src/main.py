@@ -28,7 +28,16 @@ from models import train_model, test_model
 from backtesting import backtest_strategy
 import logging
 
-def setup_logger(stock_name):
+def setup_logger(stock_name: str) -> logging.Logger:
+    """
+    Creates and configures a logger for the specified stock name.
+    
+    Parameters:
+        stock_name (str): The name of the stock for which the logger is being setup.
+    
+    Returns:
+        logger (Logger): The configured logger object.
+    """
     if not os.path.exists('logs'):
         os.makedirs('logs')
 

@@ -22,7 +22,30 @@ import numpy as np
 from sklearn.metrics import roc_curve, auc
 from data_processing import create_feature_cols
 
-def train_model(selected_option, train_until):
+def train_model(selected_option: str, train_until: str) -> dict:
+    """
+    Trains a machine learning model using the specified ticker data and returns the model and evaluation metrics.
+
+    Parameters:
+    - selected_option (str): The ticker data to download and train the model on.
+    - train_until (str): The date until which to train the model.
+
+    Returns:
+    - dict: A dictionary containing the following key-value pairs:
+        - 'train_accuracy' (float): The accuracy of the model on the training set.
+        - 'train_precision' (float): The precision of the model on the training set.
+        - 'test_accuracy' (float): The accuracy of the model on the test set.
+        - 'test_precision' (float): The precision of the model on the test set.
+        - 'df_test' (pandas.DataFrame): The test dataset with additional columns for predicted probabilities and predictions.
+        - 'y_train_pred' (numpy.ndarray): The predicted labels for the training set.
+        - 'y_test_pred' (numpy.ndarray): The predicted labels for the test set.
+        - 'x_train' (pandas.DataFrame): The feature matrix for the training set.
+        - 'x_test' (pandas.DataFrame): The feature matrix for the test set.
+        - 'clf' (RandomForestClassifier): The trained random forest classifier.
+        - 'feat_cols' (list): The list of feature columns used in the model.
+        - 'y_test' (pandas.Series): The true labels for the test set.
+        - 'y_train' (pandas.Series): The true labels for the training set.
+    """
     # Download ticker data
     df = yf.download(selected_option).reset_index()
 
@@ -78,14 +101,25 @@ def train_model(selected_option, train_until):
         'y_train': y_train
     }
 
-def test_model(selected_option, last_n_days, download_end_date=datetime.now().strftime('%Y-%m-%d')):
+def test_model(selected_option: str, last_n_days: str, download_end_date: str=datetime.now().strftime('%Y-%m-%d')) -> pd.DataFrame:
+    """
+    Downloads a trained model based on the selected option, and makes predictions on the last n days of data.
+
+    Args:
+        selected_option (str): The option selected for downloading the model.
+        last_n_days (str): The number of days to make predictions on.
+        download_end_date (str, optional): The end date for downloading data. Defaults to the current date.
+
+    Returns:
+        pandas.DataFrame: A DataFrame containing the predictions for the last n days of data.
+    """
     with open(f"models/{selected_option}_model.pkl", "rb") as f:
         clf = pickle.load(f)
 
     current_date = datetime.now()
     # Subtract last_n_days days from the current date
     test_till = current_date - timedelta(days=int(last_n_days))
-    # Format the date as a string if necessary
+    # Format the date as a string
     test_till = test_till.strftime('%Y-%m-%d')
 
     df2 = yf.download(selected_option, end=download_end_date).reset_index()

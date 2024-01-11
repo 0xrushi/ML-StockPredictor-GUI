@@ -21,8 +21,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
-def plot_confusion_matrix(y_true, y_pred, title, normalize):
-
+def plot_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, title: str, normalize: bool = False) -> None:
     if normalize:
         cm = confusion_matrix(y_true, y_pred, normalize='pred')
         sns.heatmap(cm, annot=True, fmt='.2f', cmap='Blues', cbar=False)
@@ -36,7 +35,19 @@ def plot_confusion_matrix(y_true, y_pred, title, normalize):
     
     st.pyplot(plt)
 
-def get_precision_curve(clf, x, y, title):
+def get_precision_curve(clf: object, x: np.ndarray, y: np.ndarray, title: str):
+    """
+    Generate the precision-recall curve for a given classifier.
+
+    Parameters:
+        - clf (object): The classifier to use for prediction.
+        - x (array-like): The input data.
+        - y (array-like): The target labels.
+        - title (str): The title of the plot.
+
+    Returns:
+        None
+    """
     y_scores = clf.predict_proba(x)[:, 1]
 
     thresholds = np.linspace(0, 1, 100)

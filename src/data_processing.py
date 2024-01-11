@@ -1,7 +1,19 @@
+import pandas as pd
 
 # Feature deriving
 # Distance from the moving averages
-def create_feature_cols(df):
+def create_feature_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Creates feature columns in the given DataFrame.
+
+    Parameters:
+    - df: DataFrame
+        The DataFrame to create the feature columns in.
+
+    Returns:
+    - df: DataFrame
+        The DataFrame with the feature columns added.
+    """
     for m in [10, 20, 30, 50, 100]:
         df[f'feat_dist_from_ma_{m}'] = df['Close']/df['Close'].rolling(m).mean()-1
 
@@ -19,7 +31,16 @@ def create_feature_cols(df):
     df['price_above_ma'] = df['Close'] > df['target_ma']
     return df
 
-def check_if_today_starts_with_vertical_green_overlay(df_test):
+def check_if_today_starts_with_vertical_green_overlay(df_test: pd.DataFrame) -> bool:
+    """
+    Checks if today starts with a vertical green overlay in the given DataFrame.
+
+    Parameters:
+        df_test (DataFrame): The DataFrame to check.
+
+    Returns:
+        bool: True if today starts with a vertical green overlay, False otherwise.
+    """
     df_pattern = (
         df_test[df_test['pred']]
         .groupby((~df_test['pred']).cumsum())

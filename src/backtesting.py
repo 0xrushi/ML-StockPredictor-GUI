@@ -31,7 +31,7 @@ class GreenBlockStrategy(bt.Strategy):
         self.data_pred = self.datas[0].pred  # Assuming 'pred' is part of the data feed
         self.trades = []
 
-    def notify_trade(self, trade):
+    def notify_trade(self, trade: bt.analyzers.TradeAnalyzer):
         if trade.isclosed:
             self.trades.append({'date': self.data.datetime.date(0), 'profit': trade.pnl})
 
@@ -47,12 +47,21 @@ class GreenBlockStrategy(bt.Strategy):
             self.sell(size=1, price=self.data.close[0], exectype=bt.Order.Market)
             self.log(f'SELL EXECUTED, Price: {self.data.close[0]}, Date: {self.data.datetime.date(0)}')
 
-    def log(self, txt, dt=None):
+    def log(self, txt: str, dt: datetime = None):
         dt = dt or self.datas[0].datetime.date(0)
         st.write(f'{dt.isoformat()} {txt}')
 
 
-def backtest_strategy(df):
+def backtest_strategy(df: pd.DataFrame):
+    """
+    Backtests a trading strategy using the provided DataFrame.
+
+    Parameters:
+    - df (pandas.DataFrame): The DataFrame containing the trading data.
+
+    Returns:
+    - None
+    """
     # Create a Cerebro engine instance
     cerebro = bt.Cerebro()
     initial_cash = 600.0
@@ -69,7 +78,6 @@ def backtest_strategy(df):
     # Add the data feed
     cerebro.adddata(datafeed)
 
-    # Add the strategy
     cerebro.addstrategy(GreenBlockStrategy)
 
     # Run the strategy
@@ -92,14 +100,10 @@ def backtest_strategy(df):
     avg_trades_per_week = total_trades / num_weeks
     avg_trades_per_month = total_trades / num_months
 
-    # Total Profit
     final_portfolio_value = cerebro.broker.getvalue()
     total_profit = final_portfolio_value - initial_cash
 
-    # Total Profit Percentage
     total_profit_percent = (total_profit / initial_cash) * 100
-
-    # Print results
 
     st.write(f"Average Trades per Day: {avg_trades_per_day}")
     st.write(f"Average Trades per Week: {avg_trades_per_week}")
@@ -134,14 +138,13 @@ def backtest_strategy(df):
                     opacity=0.2,
                 )
 
-            # Save the modified figure
             filename = f'plot_{i}_{j}.html'
             plotly.io.write_html(each_strategy_fig, filename, full_html=True)
 
             # Generate a link to open the plot in a new tab
             st.markdown(f'[Open Plot {i}-{j}](/{filename})', unsafe_allow_html=True)
 
-def backtest_strategy_old(df):
+def backtest_strategy_old(df: pd.DataFrame):
     # Identify the start and end of each green-filled block
     green_blocks = (
         df[df['pred']]
@@ -172,7 +175,6 @@ def backtest_strategy_old(df):
 
     trades_df = pd.DataFrame(trades)
 
-    # Get the total number of trades
     total_trades = len(trades_df)
 
     # Calculate the number of unique weeks, months, and days
@@ -193,7 +195,6 @@ def backtest_strategy_old(df):
     # Calculate cumulative profit
     trades_df['Cumulative Profit'] = trades_df['Profit'].cumsum()
 
-    # Plotting
     fig, ax1 = plt.subplots()
 
     # Plot cumulative profit
