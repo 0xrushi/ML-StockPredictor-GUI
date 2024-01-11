@@ -21,6 +21,7 @@ import seaborn as sns
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 from data_processing import create_feature_cols
+from utils import my_yf_download
 
 def train_model(selected_option: str, train_until: str) -> dict:
     """
@@ -47,7 +48,7 @@ def train_model(selected_option: str, train_until: str) -> dict:
         - 'y_train' (pandas.Series): The true labels for the training set.
     """
     # Download ticker data
-    df = yf.download(selected_option).reset_index()
+    df = my_yf_download(selected_option).reset_index()
 
     df = create_feature_cols(df)
     df['target'] = df['price_above_ma'].astype(int).shift(-5)
@@ -123,9 +124,9 @@ def test_model(selected_option: str, last_n_days: str, download_end_date: str=No
     test_till = test_till.strftime('%Y-%m-%d')
 
     if download_end_date is not None:
-        df2 = yf.download(selected_option, end=download_end_date).reset_index()
+        df2 = my_yf_download(selected_option, end=download_end_date).reset_index()
     else:
-        df2 = yf.download(selected_option).reset_index()
+        df2 = my_yf_download(selected_option).reset_index()
     df2 = create_feature_cols(df2)
 
     # show prediction on last last_n_days days
