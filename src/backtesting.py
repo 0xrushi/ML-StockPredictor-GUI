@@ -143,7 +143,7 @@ def backtest_strategy(df: pd.DataFrame):
             plotly.io.write_html(each_strategy_fig, filename, full_html=True)
 
             # Generate a link to open the plot in a new tab
-            st.markdown(f'[Open Plot {i}-{j}](/{filename})', unsafe_allow_html=True)
+            st.markdown(f'http://localhost:5001/{filename}', unsafe_allow_html=True)
 
 def backtest_strategy_old(df: pd.DataFrame):
     # Identify the start and end of each green-filled block

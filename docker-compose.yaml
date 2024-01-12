@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    command: streamlit run src/main.py --server.port=8501 --server.address=0.0.0.0
+
+  http-server:
+    image: python:3.10-slim-buster
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "5001:5001"
+    command: /bin/sh -c "python -m http.server 5001"
