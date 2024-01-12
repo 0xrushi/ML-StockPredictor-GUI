@@ -21,53 +21,29 @@ import plotly.graph_objects as go
 import pickle
 from cache_utils import save_model_and_training_date, should_retrain
 from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances, plot_candlesticks
-from utils import get_sp500_tickers
+from utils import get_sp500_tickers, get_nse_tickers
 from data_processing import create_feature_cols, check_if_today_starts_with_vertical_green_overlay
 import backtrader as bt
 from models import train_model, test_model
 from backtesting import backtest_strategy
-import logging
-
-def setup_logger(stock_name: str) -> logging.Logger:
-    """
-    Creates and configures a logger for the specified stock name.
-    
-    Parameters:
-        stock_name (str): The name of the stock for which the logger is being setup.
-    
-    Returns:
-        logger (Logger): The configured logger object.
-    """
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
-
-    logger = logging.getLogger(stock_name)
-
-    logger.setLevel(logging.DEBUG)
-
-    # Create a file handler which logs messages
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    file_handler = logging.FileHandler(f'logs/model_{stock_name}_{timestamp}.log')
-    
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-
-    logger.addHandler(file_handler)
-
-    return logger
-
-options = get_sp500_tickers()
-
-selected_option = st.selectbox("Select an stock", options, index=0, key="my_selectbox")
-
-st.write("You selected:", selected_option)
+from utils import setup_logger
 
 train_until = date(2019, 1, 1)
 selected_date = st.date_input("Train Until: ", train_until)
 train_until = selected_date.strftime('%Y-%m-%d')
 
+if st.toggle('Indian ticker data'):
+    options = get_nse_tickers()
+    st.session_state['data_source'] = 'nse'
+else:
+    options = get_sp500_tickers()
+    st.session_state['data_source'] = 'yf'
+    
+selected_option = st.selectbox("Select a stock", options, index=0, key="my_selectbox")
+st.write("You selected:", selected_option)
+
 if st.button("Train Model"):
-    model_results = train_model(selected_option, train_until)
+    model_results = train_model(selected_option, train_until, data_source=st.session_state['data_source'])
 
     st.write(f'Training Accuracy: {model_results["train_accuracy"]}')
     st.write(f'Training Precision: {model_results["train_precision"]}')
@@ -130,27 +106,30 @@ with st.expander("Test Model"):
     st.write(f"End Date: {st.session_state.curr_date}")
     if st.button("Test Model", key="btn2"):
         # Adding 1 day to the end date because yfinance downloads data up to one day before the end date
-        df_test = test_model(selected_option, last_n_days, (datetime.combine(seld+timedelta(days=1), datetime.min.time())))
+        df_test = test_model(selected_option, last_n_days, (datetime.combine(seld+timedelta(days=1), datetime.min.time())), data_source=st.session_state['data_source'])
         plot_candlesticks(df_test)
 
 with st.expander("Scan all stocks where the model recommends a buy today"):
     last_n_days = st.text_input("Last N Days", "30", key="txt2")
     mlist = []
     if st.button("Scan Stocks", key="btn3"):
-        for so in ["GOOG", *options[:2]]:
+        for so in options:
             logger = setup_logger(so)
 
-            model_results = train_model(so, train_until)
+            try: 
+                model_results = train_model(so, train_until, data_source=st.session_state['data_source'])
 
-            # Log conditions and decisions
-            logger.info(f"Train Accuracy: {model_results['train_accuracy']}, Test Accuracy: {model_results['test_accuracy']}")
-            logger.info(f"Train Precision: {model_results['train_precision']}, Test Precision: {model_results['test_precision']}")
+                # Log conditions and decisions
+                logger.info(f"Train Accuracy: {model_results['train_accuracy']}, Test Accuracy: {model_results['test_accuracy']}")
+                logger.info(f"Train Precision: {model_results['train_precision']}, Test Precision: {model_results['test_precision']}")
 
-            if model_results['train_accuracy'] > 0.6 and model_results['test_accuracy'] > 0.6 and model_results['test_precision'] > 0.6 and model_results['train_precision'] > 0.6:
-                df_test = test_model(so, last_n_days)
-                if check_if_today_starts_with_vertical_green_overlay(df_test):
-                    mlist.append(so)
-                    logger.info(f"Buy recommendation for {so}")
-                else:
-                    logger.info(f"No recommendation for {so}")
+                if model_results['train_accuracy'] > 0.6 and model_results['test_accuracy'] > 0.6 and model_results['test_precision'] > 0.6 and model_results['train_precision'] > 0.6:
+                    df_test = test_model(so, last_n_days, data_source=st.session_state['data_source'])
+                    if check_if_today_starts_with_vertical_green_overlay(df_test):
+                        mlist.append(so)
+                        logger.info(f"Buy recommendation for {so}")
+                    else:
+                        logger.info(f"No recommendation for {so}")
+            except Exception as e:
+                logger.error(f"Failed to process {so} due to error: {str(e)}")
         st.write(mlist)

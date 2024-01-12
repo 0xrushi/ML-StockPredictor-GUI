@@ -21,9 +21,9 @@ import seaborn as sns
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 from data_processing import create_feature_cols
-from utils import my_yf_download
+from utils import my_yf_download, my_nse_download, convert_date_to_string, convert_string_to_date
 
-def train_model(selected_option: str, train_until: str) -> dict:
+def train_model(selected_option: str, train_until: str, data_source: str = 'yf') -> dict:
     """
     Trains a machine learning model using the specified ticker data and returns the model and evaluation metrics.
 
@@ -48,8 +48,12 @@ def train_model(selected_option: str, train_until: str) -> dict:
         - 'y_train' (pandas.Series): The true labels for the training set.
     """
     # Download ticker data
-    df = my_yf_download(selected_option).reset_index()
-
+    if data_source == 'yf':
+        df = my_yf_download(selected_option).reset_index(drop=True)
+    elif data_source == 'nse':
+        df = my_nse_download(selected_option).reset_index(drop=True)
+    st.write(df.head())
+    df = convert_string_to_date(df, 'Date')
     df = create_feature_cols(df)
     df['target'] = df['price_above_ma'].astype(int).shift(-5)
     df = df.dropna()
@@ -85,7 +89,7 @@ def train_model(selected_option: str, train_until: str) -> dict:
     df_test = df[df['Date'] >= train_until].reset_index(drop=True)
     df_test['pred_prob'] = clf.predict_proba(x_test)[:, 1]
     df_test['pred'] = df_test['pred_prob'] > 0.5
-
+    
     return {
         'train_accuracy': train_accuracy,
         'train_precision': train_precision,
@@ -102,7 +106,7 @@ def train_model(selected_option: str, train_until: str) -> dict:
         'y_train': y_train
     }
 
-def test_model(selected_option: str, last_n_days: str, download_end_date: datetime=None) -> pd.DataFrame:
+def test_model(selected_option: str, last_n_days: str, download_end_date: datetime=None, data_source: str = 'yf') -> pd.DataFrame:
     """
     Downloads a trained model based on the selected option, and makes predictions on the last n days of data.
 
@@ -125,9 +129,15 @@ def test_model(selected_option: str, last_n_days: str, download_end_date: dateti
     # test_till = test_till.strftime('%Y-%m-%d')
 
     if download_end_date is not None:
-        df2 = my_yf_download(selected_option, end=download_end_date).reset_index()
+        if data_source == 'yf':
+            df2 = my_yf_download(selected_option, end=download_end_date).reset_index(drop=True)
+        elif data_source == 'nse':
+            df2 = my_nse_download(selected_option, end=download_end_date).reset_index(drop=True)
     else:
-        df2 = my_yf_download(selected_option).reset_index()
+        if data_source == 'yf':
+            df2 = my_yf_download(selected_option).reset_index(drop=True)
+        elif data_source == 'nse':
+            df2 = my_nse_download(selected_option).reset_index(drop=True)
         download_end_date = current_date
     df2 = create_feature_cols(df2)
 

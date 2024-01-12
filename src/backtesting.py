@@ -118,6 +118,7 @@ def backtest_strategy(df: pd.DataFrame):
 
 
     df['Date'] = df.index
+    df = df.reset_index(drop=True)
     # Determine the pattern periods to overlay
     df_pattern = (
         df[df['pred']]
