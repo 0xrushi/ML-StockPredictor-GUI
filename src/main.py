@@ -91,10 +91,46 @@ if st.button("Train Model"):
     
     backtest_strategy(model_results['df_test'])
 
+def test_date_input_handler():
+    """
+    Handles the input for the test date, initializes session state variables if not present, and provides buttons for moving the date forward or backward.
+
+    Parameters:
+    None
+
+    Returns:
+    None
+    """
+    # Initialize session state variables if not present
+    if 'curr_date' not in st.session_state:
+        st.session_state.curr_date = datetime.now().date()
+    if 'update_flag' not in st.session_state:
+        st.session_state.update_flag = False
+
+    # Buttons for moving the date forward or backward
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("←", key="back"):
+            st.session_state.curr_date -= timedelta(days=1)
+            st.session_state.update_flag = not st.session_state.update_flag
+    with col2:
+        st.write("use these arrows to traverse the calendar")
+    with col3:
+        if st.button("→", key="forward"):
+            st.session_state.curr_date += timedelta(days=1)
+            st.session_state.update_flag = not st.session_state.update_flag
+
 with st.expander("Test Model"):
     last_n_days = st.text_input("Last N Days", "30")
+    test_date_input_handler()
+
+    # Display the date input with the current date from session state
+    seld = st.date_input("End Date", value=st.session_state.curr_date, key=st.session_state.update_flag)
+
+    st.write(f"End Date: {st.session_state.curr_date}")
     if st.button("Test Model", key="btn2"):
-        df_test = test_model(selected_option, last_n_days)
+        # Adding 1 day to the end date because yfinance downloads data up to one day before the end date
+        df_test = test_model(selected_option, last_n_days, (datetime.combine(seld+timedelta(days=1), datetime.min.time())))
         plot_candlesticks(df_test)
 
 with st.expander("Scan all stocks where the model recommends a buy today"):

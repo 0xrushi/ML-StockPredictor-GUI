@@ -102,14 +102,14 @@ def train_model(selected_option: str, train_until: str) -> dict:
         'y_train': y_train
     }
 
-def test_model(selected_option: str, last_n_days: str, download_end_date: str=None) -> pd.DataFrame:
+def test_model(selected_option: str, last_n_days: str, download_end_date: datetime=None) -> pd.DataFrame:
     """
     Downloads a trained model based on the selected option, and makes predictions on the last n days of data.
 
     Args:
         selected_option (str): The option selected for downloading the model.
         last_n_days (str): The number of days to make predictions on.
-        download_end_date (str, optional): The end date for downloading data. Defaults to the None.
+        download_end_date (date, optional): The end date for downloading data. Defaults to the None.
 
     Returns:
         pandas.DataFrame: A DataFrame containing the predictions for the last n days of data.
@@ -120,17 +120,20 @@ def test_model(selected_option: str, last_n_days: str, download_end_date: str=No
     current_date = datetime.now()
     # Subtract last_n_days days from the current date
     test_till = current_date - timedelta(days=int(last_n_days))
-    # Format the date as a string
-    test_till = test_till.strftime('%Y-%m-%d')
+    
+    # # Format the date as a string
+    # test_till = test_till.strftime('%Y-%m-%d')
 
     if download_end_date is not None:
         df2 = my_yf_download(selected_option, end=download_end_date).reset_index()
     else:
         df2 = my_yf_download(selected_option).reset_index()
+        download_end_date = current_date
     df2 = create_feature_cols(df2)
 
     # show prediction on last last_n_days days
-    df_test = df2[df2['Date'] > test_till].reset_index(drop=True)
+    df_test = df2[(df2['Date'] > test_till) & (df2['Date'] < download_end_date)].reset_index(drop=True)
+
     df_test['pred_prob'] = clf.predict_proba(df_test[['feat_dist_from_ma_10', 'feat_dist_from_ma_20', 'feat_dist_from_ma_30',
     'feat_dist_from_ma_50', 'feat_dist_from_ma_100', 'feat_dist_from_max_3',
     'feat_dist_from_min_3', 'feat_dist_from_max_5', 'feat_dist_from_min_5',

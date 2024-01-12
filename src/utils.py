@@ -60,6 +60,7 @@ def my_yf_download(ticker, cache_dir="cache", end: str=None):
         df_cached.to_csv(file_path, index=False)
 
     df = pd.read_csv(file_path)
+    df['Date'] = pd.to_datetime(df['Date'])
     df.drop_duplicates(subset='Date', keep='last', inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
