@@ -157,7 +157,6 @@ def my_nse_download(ticker: str, cache_dir="cache", start: str=None, end: str=No
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
-    # File path for cached data
     file_path = os.path.join(cache_dir, f"{ticker}.csv")
     
     end_date = end.strftime('%d-%m-%Y') if end else datetime.now().strftime('%d-%m-%Y')
