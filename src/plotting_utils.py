@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import yfinance as yf
 import datetime
 import os
+import altair as alt
 
 
 from sklearn.ensemble import RandomForestClassifier
@@ -101,7 +102,7 @@ def plot_feature_importances(clf, x):
     # Display the plot in Streamlit
     st.pyplot(plt)
 
-def plot_candlesticks(df_test):
+def plot_candlesticks_plotly(df_test):
     fig = go.Figure()
 
     fig.add_trace(
@@ -160,3 +161,62 @@ def plot_candlesticks(df_test):
     )
     
     st.plotly_chart(fig)
+    
+def plot_candlesticks(df_test):
+    '''
+    Plot candlesticks chart with interactive tooltips in altair
+    '''
+    # 'Date' is in datetime format
+    df_test['Date'] = pd.to_datetime(df_test['Date'])
+    
+    # Group by consecutive 'pred=True' and get the first and last date for each group
+    df_pattern = (
+        df_test[df_test['pred']]
+        .groupby((~df_test['pred']).cumsum())
+        .agg(start=('Date', 'first'), end=('Date', 'last'))
+    ).reset_index(drop=True)
+
+    # Shift the end date by one to include the end day in the highlighted period
+    df_pattern['end'] = df_pattern['end'] + pd.Timedelta(days=1)
+
+
+    # Draws open-close bars with tooltips
+    open_close_bar = alt.Chart(df_test).mark_bar().encode(
+        alt.X('Date:T', axis=alt.Axis(title='Date')),
+        alt.Y('Open:Q', axis=alt.Axis(title='Price', format='$'), scale=alt.Scale(zero=False)),
+        alt.Y2('Close:Q'),
+        color=alt.condition(
+            "datum.Open <= datum.Close",
+            alt.value("#06982d"),  # Green bar for rising price
+            alt.value("#ae1325")   # Red bar for falling price
+        ),
+        tooltip=['Date:T', 'Open:Q', 'High:Q', 'Low:Q', 'Close:Q'] 
+    )
+
+    # Draws high and low vertical lines with tooltips
+    high_low_rule = alt.Chart(df_test).mark_rule().encode(
+        alt.Y('Low:Q'),
+        alt.Y2('High:Q'),
+        alt.X('Date:T'),
+        tooltip=['Date:T', 'Open:Q', 'High:Q', 'Low:Q', 'Close:Q'] 
+    )
+
+    # Combine the open-close bars and high-low rules with interactive hover
+    candlestick_chart = (open_close_bar + high_low_rule).interactive()
+
+    # Green overlay for highlighted periods with df_pattern
+    highlight = alt.Chart(df_pattern).mark_rect().encode(
+        x='start:T',
+        x2='end:T',
+        color=alt.value('green'),
+        opacity=alt.value(0.2)
+    )
+
+    final_chart = alt.layer(candlestick_chart, highlight).properties(
+        width=900,  # This will make the width responsive to the container
+        height=400  # You can adjust the height as needed
+    ).configure_view(
+        strokeWidth=0  # This removes the border around the chart
+    )
+
+    st.altair_chart(final_chart)
