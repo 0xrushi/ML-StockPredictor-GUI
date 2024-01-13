@@ -24,7 +24,8 @@ from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_
 from utils import get_sp500_tickers, get_nse_tickers
 from data_processing import create_feature_cols, check_if_today_starts_with_vertical_green_overlay
 import backtrader as bt
-from models import train_model, test_model
+# from models import train_model, test_model
+from Models.predictive_sma20_crossover_model import PredictiveSma20CrossoverModel
 from backtesting import backtest_strategy
 from utils import setup_logger
 
@@ -43,7 +44,8 @@ selected_option = st.selectbox("Select a stock", options, index=0, key="my_selec
 st.write("You selected:", selected_option)
 
 if st.button("Train Model"):
-    model_results = train_model(selected_option, train_until, data_source=st.session_state['data_source'])
+    model = PredictiveSma20CrossoverModel(selected_option, train_until)
+    model_results = model.run_train()
 
     st.write(f'Training Accuracy: {model_results["train_accuracy"]}')
     st.write(f'Training Precision: {model_results["train_precision"]}')
@@ -105,8 +107,9 @@ with st.expander("Test Model"):
 
     st.write(f"End Date: {st.session_state.curr_date}")
     if st.button("Test Model", key="btn2"):
+        model = PredictiveSma20CrossoverModel(selected_option, train_until)
         # Adding 1 day to the end date because yfinance downloads data up to one day before the end date
-        df_test = test_model(selected_option, last_n_days, (datetime.combine(seld+timedelta(days=1), datetime.min.time())), data_source=st.session_state['data_source'])
+        df_test = model.run_test(selected_option, last_n_days, (datetime.combine(seld+timedelta(days=1), datetime.min.time())), data_source=st.session_state['data_source'])
         plot_candlesticks(df_test)
 
 with st.expander("Scan all stocks where the model recommends a buy today"):
@@ -117,14 +120,15 @@ with st.expander("Scan all stocks where the model recommends a buy today"):
             logger = setup_logger(so)
 
             try: 
-                model_results = train_model(so, train_until, data_source=st.session_state['data_source'])
+                model = PredictiveSma20CrossoverModel(so, train_until, data_source=st.session_state['data_source'])
+                model_results = model.run_train()
 
                 # Log conditions and decisions
                 logger.info(f"Train Accuracy: {model_results['train_accuracy']}, Test Accuracy: {model_results['test_accuracy']}")
                 logger.info(f"Train Precision: {model_results['train_precision']}, Test Precision: {model_results['test_precision']}")
 
                 if model_results['train_accuracy'] > 0.6 and model_results['test_accuracy'] > 0.6 and model_results['test_precision'] > 0.6 and model_results['train_precision'] > 0.6:
-                    df_test = test_model(so, last_n_days, data_source=st.session_state['data_source'])
+                    df_test = model.run_test(so, last_n_days, data_source=st.session_state['data_source'])
                     if check_if_today_starts_with_vertical_green_overlay(df_test):
                         mlist.append(so)
                         logger.info(f"Buy recommendation for {so}")
