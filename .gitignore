@@ -3,3 +3,9 @@ models
 src/__pycache__/*
 cache/
 logs/
+!src/models
+src/models/__pycache__
+notebooks/.ipynb_checkpoints/*
+plot_0_0.html
+logs.log
+src/strategies/__pycache__/*

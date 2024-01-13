@@ -10,6 +10,11 @@ def save_model_and_training_date(stock, model):
     with open("cache/training_dates.txt", "a") as file:
         file.write(f"{stock},{datetime.datetime.now()}\n")
 
+def load_model(stock):
+    with open(f"models/{stock}_model.pkl", "rb") as f:
+        model = pickle.load(f)
+    return model
+
 def should_retrain(stock):
     model_path = f"models/{stock}_model.pkl"
     if not os.path.exists("cache/training_dates.txt") or not os.path.exists(model_path):
