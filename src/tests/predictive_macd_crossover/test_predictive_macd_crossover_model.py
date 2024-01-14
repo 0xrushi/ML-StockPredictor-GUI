@@ -14,20 +14,19 @@ import pandas as pd
 from utils import my_yf_download
 
 def mock_my_yf_download(self, *args, **kwargs):
-    # Replace 'your_data.csv' with the path to your CSV file
-    return pd.read_csv('AAPL.csv').reset_index(drop=True)
+    return pd.read_csv('tests/data/AAPL.csv').reset_index(drop=True)
 
 class TestPredictiveMacdCrossoverModel(unittest.TestCase):
     def setUp(self):
         # Initialize with some test parameters
         self.model = PredictiveMacdCrossoverModel('AAPL', '2019-01-01')
         
-        self.df = pd.read_csv('tests/predictive_macd_crossover/AAPL.csv').reset_index(drop=True)
-        self.df['Date'] = pd.to_datetime(self.df['Date'])
+        self.tempdf = pd.read_csv('tests/data/AAPL.csv').reset_index(drop=True)
+        self.tempdf['Date'] = pd.to_datetime(self.tempdf['Date'])
 
     def test_prepare_model_train_data(self):
         # Test the prepare_model_train_data method
-        result = self.model.prepare_model_train_data(self.df)
+        result = self.model.prepare_model_train_data(self.tempdf)
         self.assertIn('RSI', result['df_train'].columns)
         self.assertIn('MACD', result['df_train'].columns)
         self.assertIn('MACDSignal', result['df_train'].columns)
@@ -35,7 +34,7 @@ class TestPredictiveMacdCrossoverModel(unittest.TestCase):
 
     def test_train(self):
         # Test the train method (may need to mock certain parts)
-        train_result = self.model.prepare_model_train_data(self.df)
+        train_result = self.model.prepare_model_train_data(self.tempdf)
         df_train = train_result['df_train']
         trained_model = self.model.train(df_train)
         # Depending on the output of train, you can assert certain conditions
@@ -52,12 +51,12 @@ class TestPredictiveMacdCrossoverModel(unittest.TestCase):
     def test_run_test(self, mock_download_test_data):
         # Test the run_test method (may need to mock download_test_data and other dependencies)
         # Create a mock dataframe for testing
-        mock_download_test_data.return_value = self.df
+        mock_download_test_data.return_value = self.tempdf
         result = self.model.run_test('AAPL', '30')
         self.assertIn('pred', result.columns)
 
     def test_prepare_model_test_data(self):
-        df_test_processed = self.model.prepare_model_test_data(self.df)
+        df_test_processed = self.model.prepare_model_test_data(self.tempdf)
         self.assertIn('RSI', df_test_processed.columns)
         self.assertIn('MACD', df_test_processed.columns)
         self.assertIn('MACDSignal', df_test_processed.columns)
