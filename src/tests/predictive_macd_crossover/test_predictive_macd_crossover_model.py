@@ -14,14 +14,14 @@ import pandas as pd
 from utils import my_yf_download
 
 def mock_my_yf_download(self, *args, **kwargs):
-    return pd.read_csv('tests/data/AAPL.csv').reset_index(drop=True)
+    return pd.read_csv('src/tests/data/AAPL.csv').reset_index(drop=True)
 
 class TestPredictiveMacdCrossoverModel(unittest.TestCase):
     def setUp(self):
         # Initialize with some test parameters
         self.model = PredictiveMacdCrossoverModel('AAPL', '2019-01-01')
         
-        self.tempdf = pd.read_csv('tests/data/AAPL.csv').reset_index(drop=True)
+        self.tempdf = pd.read_csv('src/tests/data/AAPL.csv').reset_index(drop=True)
         self.tempdf['Date'] = pd.to_datetime(self.tempdf['Date'])
 
     def test_prepare_model_train_data(self):

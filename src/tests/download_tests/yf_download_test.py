@@ -31,7 +31,7 @@ def sample_data():
 
 def test_my_yf_download_new_download(mock_yf_download, sample_data):
     ticker = "AAPL"
-    cache_dir = "tests/data/tempdata"
+    cache_dir = "src/tests/data/tempdata"
     end_date = "2021-01-03"
 
     # Mock os.path.exists to control whether the cache file exists
@@ -49,7 +49,7 @@ def test_my_yf_download_new_download(mock_yf_download, sample_data):
 
 def test_my_yf_download_existing_cache(mock_yf_download, sample_data):
     ticker = "AAPL"
-    cache_dir = "tests/data/tempdata"
+    cache_dir = "src/tests/data/tempdata"
     end_date = "2021-01-03"
     
     # Prepare a sample cached file content
