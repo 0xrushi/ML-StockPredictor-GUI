@@ -9,3 +9,6 @@ notebooks/.ipynb_checkpoints/*
 plot_0_0.html
 logs.log
 src/strategies/__pycache__/*
+*.pkl
+*.pyc
+*.cpython
