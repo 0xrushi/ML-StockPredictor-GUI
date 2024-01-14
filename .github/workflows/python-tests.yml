@@ -10,21 +10,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: [3.10.13]
-
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v2
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Run pytest
-      run: |
-        pytest
+        auto-update-conda: true
+        python-version: 3.10
+        environment-file: environment.yml
+        activate-environment: my-env
 
+    - name: Conda environment creation
+      run: conda env create -f environment.yml
+
+    - name: Activate Conda environment
+      shell: bash -l {0}
+      run: conda activate my-env
+
+    - name: Run pytest
+      shell: bash -l {0}
+      run: pytest
