@@ -105,7 +105,7 @@ def my_yf_download(ticker: str, cache_dir="cache", end: str=None):
     # File path for cached data
     file_path = os.path.join(cache_dir, f"{ticker}.csv")
     
-    end_date = end if end else datetime.now()
+    end_date = datetime.strptime(end, '%Y-%m-%d') if end else datetime.now()
     
     if os.path.exists(file_path):
         df_cached = pd.read_csv(file_path)
@@ -198,9 +198,8 @@ def my_nse_download(ticker: str, cache_dir="cache", start: str=None, end: str=No
     df = pd.read_csv(file_path)
     df['Date'] = pd.to_datetime(df['Date'])
     df['Date'] = df['Date'].dt.tz_localize(None)
-    df['Date'] = df['Date'].dt.date
     # df = df.drop_duplicates(subset='Date', keep='last', inplace=True)
-    # df = df.reset_index(drop=True, inplace=True)
+    df = df.reset_index(drop=True, inplace=True)
     return df
 
 
