@@ -34,22 +34,39 @@ class GreenBlockStrategy(bt.Strategy):
     def notify_trade(self, trade: bt.analyzers.TradeAnalyzer):
         if trade.isclosed:
             self.trades.append({'date': self.data.datetime.date(0), 'profit': trade.pnl})
+            
+    def notify_order(self, order):
+        if order.status in [order.Completed]:
+            if order.isbuy():
+                self.log('BUsY EXECUssTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+                        (order.executed.price,
+                        order.executed.value,
+                        order.executed.comm))
+                # Update position or any other flags/variables here
+
+            elif order.issell():
+                self.log('SELL EssXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+                        (order.executed.price,
+                        order.executed.value,
+                        order.executed.comm))
+                # Update position or any other flags/variables here
+
 
 
     def next(self):
         # Check if today is the start of a green block
         if not self.position and self.data_pred[0]:
             self.buy(size=1, price=self.data.open[0], exectype=bt.Order.Market)
-            self.log(f'BUY EXECUTED, Price: {self.data.open[0]}, Date: {self.data.datetime.date(0)}')
+            self.log(f'BUY EXECaaUTED, Price: {self.data.open[0]}, Date: {self.data.datetime.date(0)}')
 
         # Check if today is the end of a green block
         elif self.position and not self.data_pred[0]:
             self.sell(size=1, price=self.data.close[0], exectype=bt.Order.Market)
-            self.log(f'SELL EXECUTED, Price: {self.data.close[0]}, Date: {self.data.datetime.date(0)}')
+            # self.log(f'SELL EXECUTED, Price: {self.data.close[0]}, Date: {self.data.datetime.date(0)}')
 
     def log(self, txt: str, dt: datetime = None):
         dt = dt or self.datas[0].datetime.date(0)
-        st.write(f'{dt.isoformat()} {txt}')
+        # st.write(f'{dt.isoformat()} {txt}')
 
 
 def backtest_strategy(df: pd.DataFrame):
@@ -64,7 +81,7 @@ def backtest_strategy(df: pd.DataFrame):
     """
     # Create a Cerebro engine instance
     cerebro = bt.Cerebro()
-    initial_cash = 600.0
+    initial_cash = 10000.0
     cerebro.broker.setcash(initial_cash)
     cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
     cerebro.addanalyzer(btanalyzers.TradeAnalyzer, _name='tradeanalyzer')
@@ -145,63 +162,63 @@ def backtest_strategy(df: pd.DataFrame):
             # Generate a link to open the plot in a new tab
             st.markdown(f'http://localhost:5001/{filename}', unsafe_allow_html=True)
 
-def backtest_strategy_old(df: pd.DataFrame):
-    # Identify the start and end of each green-filled block
-    green_blocks = (
-        df[df['pred']]
-        .groupby((~df['pred']).cumsum())
-        .agg(start=('Date', 'first'), end=('Date', 'last'))
-    )
+# def backtest_strategy_old(df: pd.DataFrame):
+#     # Identify the start and end of each green-filled block
+#     green_blocks = (
+#         df[df['pred']]
+#         .groupby((~df['pred']).cumsum())
+#         .agg(start=('Date', 'first'), end=('Date', 'last'))
+#     )
 
-    trade_count = 0
-    total_profit = 0
-    trades = []
+#     trade_count = 0
+#     total_profit = 0
+#     trades = []
 
-    # Iterate over each green block
-    for _, block in green_blocks.iterrows():
-        start_date = block['start']
-        end_date = block['end']
+#     # Iterate over each green block
+#     for _, block in green_blocks.iterrows():
+#         start_date = block['start']
+#         end_date = block['end']
 
-        # Get open prices for the start and close price for the end of the block
-        buy_price = df.loc[df['Date'] == start_date, 'Open'].iloc[0]
-        sell_price = df.loc[df['Date'] == end_date, 'Close'].iloc[0]
+#         # Get open prices for the start and close price for the end of the block
+#         buy_price = df.loc[df['Date'] == start_date, 'Open'].iloc[0]
+#         sell_price = df.loc[df['Date'] == end_date, 'Close'].iloc[0]
 
-        # Calculate profit for this block and add to total profit
-        profit = sell_price - buy_price
-        total_profit += profit
+#         # Calculate profit for this block and add to total profit
+#         profit = sell_price - buy_price
+#         total_profit += profit
 
-        trades.append({'Date': start_date, 'Profit': profit})
-        trade_count += 1
-        st.write(f"Trade {trade_count}: Buy on {start_date} at \${buy_price}, Sell on {end_date} at \${sell_price}, Profit: \${profit}")
+#         trades.append({'Date': start_date, 'Profit': profit})
+#         trade_count += 1
+#         st.write(f"Trade {trade_count}: Buy on {start_date} at \${buy_price}, Sell on {end_date} at \${sell_price}, Profit: \${profit}")
 
-    trades_df = pd.DataFrame(trades)
+#     trades_df = pd.DataFrame(trades)
 
-    total_trades = len(trades_df)
+#     total_trades = len(trades_df)
 
-    # Calculate the number of unique weeks, months, and days
-    num_weeks = len(trades_df['Date'].dt.isocalendar().week.unique())
-    num_months = len(trades_df['Date'].dt.to_period('M').unique())
-    num_days = len(trades_df['Date'].dt.to_period('D').unique())
+#     # Calculate the number of unique weeks, months, and days
+#     num_weeks = len(trades_df['Date'].dt.isocalendar().week.unique())
+#     num_months = len(trades_df['Date'].dt.to_period('M').unique())
+#     num_days = len(trades_df['Date'].dt.to_period('D').unique())
 
-    # Calculate average trades
-    avg_trades_per_week = total_trades / num_weeks
-    avg_trades_per_month = total_trades / num_months
-    avg_trades_per_day = total_trades / num_days
+#     # Calculate average trades
+#     avg_trades_per_week = total_trades / num_weeks
+#     avg_trades_per_month = total_trades / num_months
+#     avg_trades_per_day = total_trades / num_days
 
-    st.write(f"Total Profit: ${total_profit}")
-    st.write(f"Average Trades per Week: {avg_trades_per_week}")
-    st.write(f"Average Trades per Month: {avg_trades_per_month}")
-    st.write(f"Average Trades per Day: {avg_trades_per_day}")
+#     st.write(f"Total Profit: ${total_profit}")
+#     st.write(f"Average Trades per Week: {avg_trades_per_week}")
+#     st.write(f"Average Trades per Month: {avg_trades_per_month}")
+#     st.write(f"Average Trades per Day: {avg_trades_per_day}")
 
-    # Calculate cumulative profit
-    trades_df['Cumulative Profit'] = trades_df['Profit'].cumsum()
+#     # Calculate cumulative profit
+#     trades_df['Cumulative Profit'] = trades_df['Profit'].cumsum()
 
-    fig, ax1 = plt.subplots()
+#     fig, ax1 = plt.subplots()
 
-    # Plot cumulative profit
-    ax1.plot(trades_df['Date'], trades_df['Cumulative Profit'], color='green', label='Cumulative Profit')
-    ax1.set_xlabel('Date')
-    ax1.set_ylabel('Cumulative Profit')
-    ax1.legend(loc='upper left')
+#     # Plot cumulative profit
+#     ax1.plot(trades_df['Date'], trades_df['Cumulative Profit'], color='green', label='Cumulative Profit')
+#     ax1.set_xlabel('Date')
+#     ax1.set_ylabel('Cumulative Profit')
+#     ax1.legend(loc='upper left')
 
-    st.pyplot(plt)
+#     st.pyplot(plt)
