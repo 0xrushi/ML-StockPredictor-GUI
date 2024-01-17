@@ -1,29 +1,56 @@
 from sklearn.ensemble import RandomForestClassifier
-from cache_utils import save_model_and_training_date
-import pickle
 import streamlit as st
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-import yfinance as yf
-from datetime import datetime, date, timedelta
-import os
-from backtrader_plotly.plotter import BacktraderPlotly
-from backtrader_plotly.scheme import PlotScheme
-import backtrader.analyzers as btanalyzers
-import plotly.io
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-import numpy as np
-from sklearn.metrics import roc_curve, auc
-from data_processing import create_feature_cols
-from utils import my_yf_download, my_nse_download, convert_date_to_string, convert_string_to_date
+from utils import convert_string_to_date
 from .model_utils import BaseModel
-from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances, plot_candlesticks
+from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances
+
+def create_feature_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Creates feature columns in the given DataFrame.
+
+    Parameters:
+    - df: DataFrame
+        The DataFrame to create the feature columns in.
+
+    Returns:
+    - df: DataFrame
+        The DataFrame with the feature columns added.
+    """
+    for m in [10, 20, 30, 50, 100]:
+        df[f'feat_dist_from_ma_{m}'] = df['Close']/df['Close'].rolling(m).mean()-1
+
+    # Distance from n day max/min
+    for m in [3, 5, 10, 15, 20, 30, 50, 100]:
+        df[f'feat_dist_from_max_{m}'] = df['Close']/df['High'].rolling(m).max()-1
+        df[f'feat_dist_from_min_{m}'] = df['Close']/df['Low'].rolling(m).min()-1
+
+    # Price distance
+    for m in [1, 2, 3, 4, 5, 10, 15, 20, 30, 50, 100]:
+        df[f'feat_price_dist_{m}'] = df['Close']/df['Close'].shift(m)-1
+
+    # # Target = if the price above the 20 ma in 5 days time
+    # df['target_ma'] = df['Close'].rolling(20).mean()
+    # df['price_above_ma'] = df['Close'] > df['target_ma']
+    
+    # Assuming df is your DataFrame and it contains 'Close', 'Volume', and 'High' columns
+    # Add moving average
+    df['target_ma'] = df['Close'].rolling(20).mean()
+
+    # Calculate VWAP
+    df['cumulative_volume_price'] = (df['Close'] * df['Volume']).cumsum()
+    df['cumulative_volume'] = df['Volume'].cumsum()
+    df['VWAP'] = df['cumulative_volume_price'] / df['cumulative_volume']
+
+    # Update the strategy to include both MA and VWAP
+    df['price_above_ma'] = (df['Close'] > df['target_ma']) & (df['feat_dist_from_ma_30'] > df['feat_dist_from_ma_50'])
+
+    # Drop intermediate columns if they are not needed
+    df.drop(['cumulative_volume_price', 'cumulative_volume'], axis=1, inplace=True)
+    return df
+
 
 class PredictiveSma20CrossoverModel(BaseModel):
     """
@@ -81,7 +108,7 @@ class PredictiveSma20CrossoverModel(BaseModel):
     def train(self, x_train, y_train):
         clf = RandomForestClassifier(
             n_estimators=100,
-            max_depth=3,
+            max_depth=5,
             random_state=42,
             class_weight='balanced'
         )

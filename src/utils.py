@@ -1,13 +1,11 @@
-import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
 import os
-import io
 import nsepython
 import logging
-from datetime import timedelta, datetime
+from datetime import datetime
 from NSEDownload import stocks
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -105,6 +103,8 @@ def my_yf_download(ticker: str, cache_dir="cache", end: str=None):
     # File path for cached data
     file_path = os.path.join(cache_dir, f"{ticker}.csv")
     
+    if isinstance(end, datetime):
+        end = end.strftime('%Y-%m-%d')
     end_date = datetime.strptime(end, '%Y-%m-%d') if end else datetime.now()
     
     if os.path.exists(file_path):

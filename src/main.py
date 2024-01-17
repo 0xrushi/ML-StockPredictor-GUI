@@ -1,44 +1,25 @@
 import streamlit as st
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
-import yfinance as yf
 from datetime import datetime, date, timedelta
-import os
-from backtrader_plotly.plotter import BacktraderPlotly
-from backtrader_plotly.scheme import PlotScheme
-import backtrader.analyzers as btanalyzers
-import plotly.io
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score
-import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-import numpy as np
-from sklearn.metrics import roc_curve, auc
-import plotly.graph_objects as go
-import pickle
-from cache_utils import save_model_and_training_date, should_retrain
 from plotting_utils import (
-    plot_confusion_matrix,
-    get_precision_curve,
-    plot_roc_curve,
-    plot_feature_importances,
     plot_candlesticks,
 )
 from utils import get_sp500_tickers, get_nse_tickers
 from data_processing import (
-    create_feature_cols,
     check_if_today_starts_with_vertical_green_overlay,
 )
-import backtrader as bt
 
 # from models import train_model, test_model
-from models.predictive_sma20_crossover_model import PredictiveSma20CrossoverModel
-from models.predictive_macd_crossover_model import PredictiveMacdCrossoverModel
 from strategies.backtesting import backtest_strategy
 from utils import setup_logger
+from models.predictive_sma20_crossover_model import PredictiveSma20CrossoverModel
+from models.predictive_macd_crossover_model import PredictiveMacdCrossoverModel
+from models.bollinger_bands_metalabel import BollingerBandsMetalabel
+from models.rolling_precision_recall_model import RollingPrecisionRecallModel
+_ = PredictiveMacdCrossoverModel
+_=PredictiveSma20CrossoverModel
+_=BollingerBandsMetalabel
+_=RollingPrecisionRecallModel
 
 
 def test_date_input_handler():
@@ -89,9 +70,11 @@ def main():
 
     # Drop down to select model/strategy
     model_names = [
+        "RollingPrecisionRecallModel",
+        'BollingerBandsMetalabel',
         "PredictiveMacdCrossoverModel",
         "PredictiveSma20CrossoverModel",
-    ]  # Add all your model names
+    ]
     selected_model_name = st.selectbox("Select a Model", model_names)
     if selected_model_name:
         selected_model_class = globals()[selected_model_name]
