@@ -1,13 +1,33 @@
+from sklearn.ensemble import RandomForestClassifier
 from cache_utils import save_model_and_training_date, load_model
+import pickle
 import streamlit as st
-from datetime import datetime, timedelta
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import yfinance as yf
+from datetime import datetime, date, timedelta
+import os
+from backtrader_plotly.plotter import BacktraderPlotly
+from backtrader_plotly.scheme import PlotScheme
+import backtrader.analyzers as btanalyzers
+import plotly.io
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score
+import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import numpy as np
+from sklearn.metrics import roc_curve, auc
+from data_processing import create_feature_cols
+from utils import my_yf_download, my_nse_download, convert_date_to_string, convert_string_to_date
 from .model_utils import BaseModel2
 import talib
 from pycaret.classification import setup, compare_models, tune_model, finalize_model, predict_model
 
 from sklearn.metrics import classification_report, confusion_matrix
+from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances, plot_candlesticks
 
 class PredictiveMacdCrossoverModel(BaseModel2):
     """

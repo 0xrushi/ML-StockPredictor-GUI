@@ -1,9 +1,27 @@
+from sklearn.ensemble import RandomForestClassifier
 from cache_utils import save_model_and_training_date, load_model
+import pickle
 import streamlit as st
-from datetime import datetime, timedelta
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import yfinance as yf
+from datetime import datetime, date, timedelta
+import os
+from backtrader_plotly.plotter import BacktraderPlotly
+from backtrader_plotly.scheme import PlotScheme
+import backtrader.analyzers as btanalyzers
+import plotly.io
 
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score
-from utils import my_yf_download, my_nse_download
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import numpy as np
+from sklearn.metrics import roc_curve, auc
+from data_processing import create_feature_cols
+from utils import my_yf_download, my_nse_download, convert_date_to_string, convert_string_to_date
 
 class BaseModel:
     def __init__(self, selected_option: str, train_until: str, data_source: str = 'yf'):
@@ -88,7 +106,7 @@ class BaseModel:
         df_test = df[df['Date'] >= self.train_until]
 
         df_test['pred_prob'] = clf.predict_proba(x_test)[:, 1]
-        df_test['pred'] = df_test['pred_prob'] > 0.4
+        df_test['pred'] = df_test['pred_prob'] > 0.5
         
         # Save the model
         save_model_and_training_date(self.model_file_name, clf)
@@ -168,7 +186,7 @@ class BaseModel2:
             if data_source == 'yf':
                 df2 = my_yf_download(selected_option).reset_index(drop=True)
             elif data_source == 'nse':
-                df2 = my_nse_download(selected_option).reset_index(drop=True)
+                df2 = my_yf_download(selected_option).reset_index(drop=True)
         return df2
 
     def prepare_model_train_data(self, df):
