@@ -219,13 +219,31 @@ def get_sp500_tickers() -> list:
     return df['Symbol'].tolist()
 
 def get_nse_tickers():
-    data=pd.read_csv("./index/nse_equities.csv")
+    # Get the directory of the current script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Go one directory up from the script directory
+    base_dir = os.path.dirname(script_dir)
+    # Define the paths for models and cache directories relative to the base directory
+    index_dir = os.path.join(base_dir, "index")
+
+    # Define the paths for model file and training dates file
+    nse_equities_path = os.path.join(index_dir, "nse_equities.csv")
+    data=pd.read_csv(nse_equities_path)
     symbols=data["symbol"]
     #symbols = [s + ".NS" for s in symbols]
     return symbols
 
 def get_nse_top_gainers_tickers():
-    data=pd.read_csv("./index/nse_top_gainers.csv")
+    # Get the directory of the current script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Go one directory up from the script directory
+    base_dir = os.path.dirname(script_dir)
+    # Define the paths for models and cache directories relative to the base directory
+    index_dir = os.path.join(base_dir, "index")
+
+    # Define the paths for model file and training dates file
+    nse_equities_path = os.path.join(index_dir, "nse_top_gainers.csv")
+    data=pd.read_csv(nse_equities_path)
     symbols=data["symbol"]
     #symbols = [s + ".NS" for s in symbols]
     return symbols

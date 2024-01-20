@@ -12,7 +12,7 @@ def save_model_and_training_date(stock, model):
     base_dir = os.path.dirname(script_dir)
 
     # Define the paths for models and cache directories relative to the base directory
-    models_dir = os.path.join(base_dir, "models")
+    models_dir = os.path.join(base_dir, "trained_models")
     cache_dir = os.path.join(base_dir, "cache")
 
     # Define the paths for model file and training dates file
@@ -39,7 +39,7 @@ def load_model(stock):
     # Go one directory up from the script directory
     base_dir = os.path.dirname(script_dir)
     # Define the path for the model directory relative to the base directory
-    models_dir = os.path.join(base_dir, "models")
+    models_dir = os.path.join(base_dir, "trained_models")
     # Define the path for the model file
     model_path = os.path.join(models_dir, f"{stock}_model.pkl")
 

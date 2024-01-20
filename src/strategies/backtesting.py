@@ -15,14 +15,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import numpy as np
-from sklearn.metrics import roc_curve, auc
-import plotly.graph_objects as go
-import pickle
-from cache_utils import save_model_and_training_date, should_retrain
-from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances, plot_candlesticks
-from utils import get_sp500_tickers
 import backtrader as bt
-from custom_data_feed import CustomData
+from src.custom_data_feed import CustomData
 
 class CustomSharpeRatio(bt.Analyzer):
     def __init__(self):

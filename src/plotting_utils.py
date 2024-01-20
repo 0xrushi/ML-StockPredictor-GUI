@@ -212,8 +212,14 @@ def plot_candlesticks(df_test, save_to_file=None):
         color=alt.value('green'),
         opacity=alt.value(0.2)
     )
+    
+    moving_average_line = alt.Chart(df_test).mark_line(color='blue', strokeWidth=2).encode(
+        x='Date:T',
+        y=alt.Y('target_ma:Q', axis=alt.Axis(title='Moving Average')),  # Ensure the column name matches your DataFrame
+        tooltip=['Date:T', 'target_ma:Q']
+    )
 
-    final_chart = alt.layer(candlestick_chart, highlight).properties(
+    final_chart = alt.layer(candlestick_chart, highlight, moving_average_line).properties(
         width=900,  # This will make the width responsive to the container
         height=400  # You can adjust the height as needed
     ).configure_view(
