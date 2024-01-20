@@ -8,7 +8,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from models.predictive_macd_crossover_model import PredictiveMacdCrossoverModel
+from src.models.predictive_macd_crossover_model import PredictiveMacdCrossoverModel
 from unittest.mock import patch
 import pandas as pd
 from utils import my_yf_download

@@ -11,6 +11,7 @@ import numpy as np
 from sklearn.metrics import roc_curve, auc
 import plotly.graph_objects as go
 import logging
+from altair_saver import save
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
@@ -155,7 +156,7 @@ def plot_candlesticks_plotly(df_test):
     
     st.plotly_chart(fig)
     
-def plot_candlesticks(df_test):
+def plot_candlesticks(df_test, save_to_file=None):
     '''
     Plot candlesticks chart with interactive tooltips in altair
     '''
@@ -212,4 +213,7 @@ def plot_candlesticks(df_test):
         strokeWidth=0  # This removes the border around the chart
     )
 
-    st.altair_chart(final_chart)
+    if save_to_file:
+        save(final_chart, save_to_file)
+    else:
+        st.altair_chart(final_chart)

@@ -3,9 +3,9 @@ import streamlit as st
 import pandas as pd
 
 from sklearn.ensemble import RandomForestClassifier
-from utils import convert_string_to_date
+from src.utils import convert_string_to_date
 from .model_utils import BaseModel
-from plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances
+from src.plotting_utils import plot_confusion_matrix, get_precision_curve, plot_roc_curve, plot_feature_importances
 
 def create_feature_cols(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -119,21 +119,20 @@ class PredictiveSma20CrossoverModel(BaseModel):
         return create_feature_cols(df_test)
     
     def plot(self):
-        with st.expander("Show Plots"):
-            if self.model_results:
-                model_results = self.model_results
-                plot_confusion_matrix(model_results['y_train'], model_results['y_train_pred'], title='Training Data', normalize=False)
-                plot_confusion_matrix(model_results['y_train'], model_results['y_train_pred'], title='Training Data - Normalized', normalize=True)
+        if False:
+            model_results = self.model_results
+            plot_confusion_matrix(model_results['y_train'], model_results['y_train_pred'], title='Training Data', normalize=False)
+            plot_confusion_matrix(model_results['y_train'], model_results['y_train_pred'], title='Training Data - Normalized', normalize=True)
 
-                plot_confusion_matrix(model_results['y_test'], model_results['y_test_pred'], title='Testing Data', normalize=False)
-                plot_confusion_matrix(model_results['y_test'], model_results['y_test_pred'], title='Testing Data - Normalized', normalize=True)
+            plot_confusion_matrix(model_results['y_test'], model_results['y_test_pred'], title='Testing Data', normalize=False)
+            plot_confusion_matrix(model_results['y_test'], model_results['y_test_pred'], title='Testing Data - Normalized', normalize=True)
 
-                get_precision_curve(model_results['clf'], model_results['x_train'], model_results['y_train'], 'Training - Precision as a Function of Probability')
-                get_precision_curve(model_results['clf'], model_results['x_test'], model_results['y_test'], 'Testing - Precision as a Function of Probability')
+            # get_precision_curve(model_results['clf'], model_results['x_train'], model_results['y_train'], 'Training - Precision as a Function of Probability')
+            # get_precision_curve(model_results['clf'], model_results['x_test'], model_results['y_test'], 'Testing - Precision as a Function of Probability')
 
-                plot_roc_curve(model_results['y_train'], model_results['clf'].predict_proba(model_results['x_train'])[:, 1], 'ROC Curve for Training Data')
-                plot_roc_curve(model_results['y_test'], model_results['clf'].predict_proba(model_results['x_test'])[:, 1], 'ROC Curve for Test Data')
-                plot_feature_importances(model_results['clf'], model_results['x_train'])
-            else:
-                st.write('Model not yet trained')
+            # plot_roc_curve(model_results['y_train'], model_results['clf'].predict_proba(model_results['x_train'])[:, 1], 'ROC Curve for Training Data')
+            # plot_roc_curve(model_results['y_test'], model_results['clf'].predict_proba(model_results['x_test'])[:, 1], 'ROC Curve for Test Data')
+            plot_feature_importances(model_results['clf'], model_results['x_train'])
+        else:
+            st.write('Model not yet trained')
             

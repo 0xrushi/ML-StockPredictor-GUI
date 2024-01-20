@@ -1,9 +1,9 @@
-from cache_utils import save_model_and_training_date, load_model
+from src.cache_utils import save_model_and_training_date, load_model
 import streamlit as st
 from datetime import datetime, timedelta
 
 from sklearn.metrics import accuracy_score, precision_score
-from utils import my_yf_download, my_nse_download
+from src.utils import my_yf_download, my_nse_download
 
 class BaseModel:
     def __init__(self, selected_option: str, train_until: str, data_source: str = 'yf'):
@@ -71,8 +71,9 @@ class BaseModel:
 
     def run_train(self):
         df = self.download_train_data()
+        self.train_until= df['Date'].min() + 0.9 * (df['Date'].max() - df['Date'].min() )
         results = self.prepare_model_train_data (df)
-        
+
         df = results['df_train']
         x_train = results['x_train']
         y_train = results['y_train']

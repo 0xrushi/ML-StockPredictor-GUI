@@ -1,5 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
-from cache_utils import save_model_and_training_date, load_model
+from src.cache_utils import save_model_and_training_date, load_model
 import streamlit as st
 from datetime import datetime, timedelta
 
@@ -68,40 +68,38 @@ class RollingPrecisionRecallModel(BaseModel):
         super().__init__(selected_option, train_until, data_source)   
         self.model_file_name = f"{self.selected_option}_{self.__class__.__name__}"
 
-    def run_train(self):
-        df = self.download_train_data()
-        results = self.prepare_model_train_data(df)
+    # def run_train(self):
+    #     df = self.download_train_data()
+    #     results = self.prepare_model_train_data(df)
         
-        df_train = results['df_train']
-        df_test = results['df_test']
+    #     df_train = results['df_train']
+    #     df_test = results['df_test']
         
-        final_model = self.train(df_train)
+    #     final_model = self.train(df_train)
 
-        # Predict on the test data
-        predictions = predict_model(final_model, data=df_test)
+    #     # Predict on the test data
+    #     predictions = predict_model(final_model, data=df_test)
     
-        actual = predictions['target']
-        predicted = predictions['prediction_label']
-        st.markdown(f"Classification report: \n ```{classification_report(actual, predicted)}```")
-        st.write("Confusion matrix: \n", confusion_matrix(actual, predicted))
+    #     actual = predictions['target']
+    #     predicted = predictions['prediction_label']
+    #     st.markdown(f"Classification report: \n ```{classification_report(actual, predicted)}```")
+    #     st.write("Confusion matrix: \n", confusion_matrix(actual, predicted))
 
-        df_test['pred_prob'] = predicted.values
-        df_test['pred'] = df_test['pred_prob'] == 1
+    #     df_test['pred_prob'] = predicted.values
+    #     df_test['pred'] = df_test['pred_prob'] == 1
         
-        # Save the model
-        save_model_and_training_date(self.model_file_name, final_model)
+    #     # Save the model
+    #     save_model_and_training_date(self.model_file_name, final_model)
 
-        return {
-            'df_test': df_test
-        } 
+    #     return {
+    #         'df_test': df_test
+    #     } 
     
     def prepare_model_train_data(self, df):
         # Assuming df is your DataFrame with historical stock data
         df = create_feature_cols(df)
         df['Returns'] = df['Close'].pct_change().fillna(0)
         df['Volatility'] = df['Returns'].rolling(5).std()
-
-
 
         # Feature engineering for the primary model
         # (Simple features for demonstration purposes)
@@ -139,6 +137,8 @@ class RollingPrecisionRecallModel(BaseModel):
         x_train.dropna(inplace=True)
         
         primary_model = self.train(x_train, y_train)
+        save_model_and_training_date(f"{self.model_file_name}_primary_model", primary_model)
+        
         metrics = self.evaluate(primary_model, x_train, y_train, x_test, y_test)
         
         
@@ -277,7 +277,8 @@ class RollingPrecisionRecallModel(BaseModel):
         df2 = self.download_test_data(selected_option, last_n_days, download_end_date, data_source)
         df2 = self.prepare_model_test_data(df2)
         
-        clf = load_model(self.model_file_name)
+        meta_model = load_model(self.model_file_name)
+        
         current_date = datetime.now()
 
         # Subtract last_n_days days from the current date
@@ -287,21 +288,99 @@ class RollingPrecisionRecallModel(BaseModel):
             download_end_date = current_date
             
         df_test = df2[(df2['Date'] > test_till) & (df2['Date'] < download_end_date)].reset_index(drop=True)
+        feat_cols = [col for col in df_test.columns if 'feat' in col]
+        x_test = df_test[feat_cols]
+        y = df_test['target']
+        meta_model = load_model(f"{self.model_file_name}")
+        primary_predictions = meta_model.predict(x_test)
         
-        # Predict on the test data
-        predictions = predict_model(clf, data=df_test)
-        predicted = predictions['prediction_label']
-        df_test['pred_prob'] = predicted.values
-        df_test['pred'] = df_test['pred_prob'] == 1
+        df_test['pred_prob'] = primary_predictions
+        df_test['pred'] = df_test['pred_prob'] >0.5
         
         return df_test
         
-    def prepare_model_test_data(self, df_test):
-        df_test['RSI'] = talib.RSI(df_test['Close'])
-        df_test['MACD'], df_test['MACDSignal'], _ = talib.MACD(df_test['Close'])
+    def prepare_model_test_data(self, df):
+        # Assuming df is your DataFrame with historical stock data
+        df = create_feature_cols(df)
+        df['Returns'] = df['Close'].pct_change().fillna(0)
+        df['Volatility'] = df['Returns'].rolling(5).std()
 
-        df_test = df_test.dropna()
-        return df_test
+        # Feature engineering for the primary model
+        # (Simple features for demonstration purposes)
+        df['MA10'] = df['Close'].rolling(window=10).mean()
+        df['MA50'] = df['Close'].rolling(window=50).mean()
+        df = df.dropna()
+
+        # Create binary labels: 1 if next day's return is positive, 0 otherwise
+        # df['target'] = (df['Returns'].shift(-1) > 0).astype(int)
+        # Define the target variable
+        df['target'] = df['price_above_ma'].astype(int).shift(-5)
+        df.dropna(inplace=True)
+
+        feat_cols = [col for col in df.columns if 'feat' in col]
+        # Defining features and labels
+        X = df[feat_cols]
+        y = df['target']
+        
+        x_train = df[df['Date'] < self.train_until][feat_cols]
+        y_train = df[df['Date'] < self.train_until]['target']
+
+        x_test = df[df['Date'] >= self.train_until][feat_cols]
+        y_test = df[df['Date'] >= self.train_until]['target']
+        
+        scaler = StandardScaler()
+        primary_model = load_model(f"{self.model_file_name}_primary_model")
+        
+        # Define window size for rolling calculation
+        window_size = 50  # for example, last 50 predictions
+
+        # Initialize lists to store the rolling metrics
+        rolling_precision = []
+        rolling_recall = []
+
+        data_scaled = df.copy()
+        data_scaled[feat_cols] = scaler.fit_transform(df[feat_cols])
+
+        X = data_scaled[feat_cols]
+        y = data_scaled['target']
+
+        predictions_data_scaled = primary_model.predict(X)
+
+        # Loop through the validation dataset in windows
+        for i in range(window_size, len(X)):
+            # Define the windowed subsets
+            y_true_window = y[i-window_size:i]
+            y_pred_window = predictions_data_scaled[i-window_size:i]
+
+            # Calculate precision and recall for the current window
+            window_precision = precision_score(y_true_window, y_pred_window)
+            window_recall = recall_score(y_true_window, y_pred_window)
+
+            # Append to lists
+            rolling_precision.append(window_precision)
+            rolling_recall.append(window_recall)
+
+        # Now rolling_precision and rolling_recall contain the rolling metrics
+
+        # Convert lists to Series and align with the original DataFrame index
+        rolling_precision_series = pd.Series([None]*window_size + rolling_precision, index=X.index)
+        rolling_recall_series = pd.Series([None]*window_size + rolling_recall, index=X.index)
+        meta_features = X[feat_cols]
+
+        meta_features['primary_predictions'] = predictions_data_scaled
+        # Combine rolling metrics with other features
+        meta_features['rolling_precision'] = rolling_precision_series
+        meta_features['rolling_recall'] = rolling_recall_series
+
+        meta_features = meta_features[['primary_predictions', 'rolling_recall', 'rolling_precision']]
+        data = pd.concat([df, meta_features], axis=1)
+        
+        data['primary_predictions'] = 0
+        data['CorrectPrediction'] = (data['primary_predictions'] == data['target'])
+        data['MetaLabel'] = data['CorrectPrediction'] &  (data['Returns'] > 0.005)
+        
+        
+        return data
     
     def plot(self):
         pass

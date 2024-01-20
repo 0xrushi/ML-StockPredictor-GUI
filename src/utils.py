@@ -26,11 +26,11 @@ def convert_date_to_string(df, column_name):
         # Check if the column is either datetime64[ns] or date
         if pd.api.types.is_datetime64_any_dtype(df[column_name]) or pd.api.types.is_dtype(df[column_name], 'date'):
             df[column_name] = df[column_name].astype(str)
-            print(f"Column '{column_name}' converted to string.")
+            logger.debug(f"Column '{column_name}' converted to string.")
         else:
-            print(f"Column '{column_name}' is not a datetime or date type.")
+            logger.debug(f"Column '{column_name}' is not a datetime or date type.")
     else:
-        print(f"Column '{column_name}' does not exist in the DataFrame.")
+        logger.debug(f"Column '{column_name}' does not exist in the DataFrame.")
 
     return df
 
@@ -48,11 +48,11 @@ def convert_string_to_date(df, column_name):
     if column_name in df.columns:
         try:
             df[column_name] = pd.to_datetime(df[column_name])
-            print(f"Column '{column_name}' converted to datetime.")
+            logger.debug(f"Column '{column_name}' converted to datetime.")
         except Exception as e:
-            print(f"Conversion failed: {e}")
+            logger.debug(f"Conversion failed: {e}")
     else:
-        print(f"Column '{column_name}' does not exist in the DataFrame.")
+        logger.debug(f"Column '{column_name}' does not exist in the DataFrame.")
 
     return df
 
@@ -84,7 +84,7 @@ def setup_logger(stock_name: str) -> logging.Logger:
 
     return logger
 
-def my_yf_download(ticker: str, cache_dir="cache", end: str=None):
+def my_yf_download(ticker: str, cache_dir="../cache", end: str=None):
     """
     Downloads financial data for a given ticker and stores it in a cache directory.
     
@@ -121,7 +121,7 @@ def my_yf_download(ticker: str, cache_dir="cache", end: str=None):
         start_date = last_date + pd.Timedelta(days=1) if last_date else None
 
         # Download new data
-        if not start_date or (start_date.date() < end_date.date()):
+        if start_date and (start_date.date() < end_date.date()):
             print(f"Downloading new data for {ticker} from {start_date} to {end_date}")
             df_new = yf.download(ticker, start=start_date.date(), end=end_date.date()).reset_index()
             

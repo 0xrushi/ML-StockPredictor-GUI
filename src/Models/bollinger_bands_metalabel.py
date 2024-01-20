@@ -1,5 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
-from cache_utils import save_model_and_training_date, load_model
+from src.cache_utils import save_model_and_training_date, load_model
 import streamlit as st
 from datetime import datetime, timedelta
 
