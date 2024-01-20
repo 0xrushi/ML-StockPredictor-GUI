@@ -7,9 +7,7 @@ import sys
 import os
 import pytest
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
-from models.predictive_sma20_crossover_model import PredictiveSma20CrossoverModel
+from src.models.predictive_sma20_crossover_model import PredictiveSma20CrossoverModel
 
 # Sample DataFrame to mimic financial data
 sample_data = pd.read_csv('src/tests/data/AAPL.csv').reset_index(drop=True)

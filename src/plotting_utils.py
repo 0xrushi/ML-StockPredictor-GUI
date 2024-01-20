@@ -1,15 +1,22 @@
 import streamlit as st
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+import yfinance as yf
+import datetime
+import os
 import altair as alt
 
 
-from sklearn.metrics import precision_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import numpy as np
 from sklearn.metrics import roc_curve, auc
 import plotly.graph_objects as go
+import pickle
 import logging
 from altair_saver import save
 

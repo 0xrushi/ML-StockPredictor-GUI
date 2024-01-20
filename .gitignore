@@ -15,3 +15,5 @@ src/strategies/__pycache__/*
 notebooks/mlflow_artifacts/*
 notebooks/mlruns/*
 mlruns/0/meta.yaml
+recommended.txt
+out

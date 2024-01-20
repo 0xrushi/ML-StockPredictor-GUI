@@ -1,11 +1,13 @@
+import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
 import os
+import io
 import nsepython
 import logging
-from datetime import datetime
+from datetime import timedelta, datetime
 from NSEDownload import stocks
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -99,7 +101,7 @@ def my_yf_download(ticker: str, cache_dir="../cache", end: str=None):
     # Ensure cache directory exists
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
-
+    
     # File path for cached data
     file_path = os.path.join(cache_dir, f"{ticker}.csv")
     
@@ -110,7 +112,6 @@ def my_yf_download(ticker: str, cache_dir="../cache", end: str=None):
     if os.path.exists(file_path):
         df_cached = pd.read_csv(file_path)
         df_cached['Date'] = pd.to_datetime(df_cached['Date'])
-        
         # Get the last date from the cached data
         if not df_cached.empty:
             last_date = df_cached['Date'].max()
@@ -198,8 +199,9 @@ def my_nse_download(ticker: str, cache_dir="cache", start: str=None, end: str=No
     df = pd.read_csv(file_path)
     df['Date'] = pd.to_datetime(df['Date'])
     df['Date'] = df['Date'].dt.tz_localize(None)
+    df['Date'] = df['Date'].dt.date
     # df = df.drop_duplicates(subset='Date', keep='last', inplace=True)
-    df = df.reset_index(drop=True, inplace=True)
+    # df = df.reset_index(drop=True, inplace=True)
     return df
 
 
@@ -217,5 +219,13 @@ def get_sp500_tickers() -> list:
     return df['Symbol'].tolist()
 
 def get_nse_tickers():
-    symbols = nsepython.nse_eq_symbols()
+    data=pd.read_csv("./index/nse_equities.csv")
+    symbols=data["symbol"]
+    #symbols = [s + ".NS" for s in symbols]
+    return symbols
+
+def get_nse_top_gainers_tickers():
+    data=pd.read_csv("./index/nse_top_gainers.csv")
+    symbols=data["symbol"]
+    #symbols = [s + ".NS" for s in symbols]
     return symbols
