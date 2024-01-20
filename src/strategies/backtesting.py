@@ -109,6 +109,7 @@ def backtest_strategy(df: pd.DataFrame):
 
     # Trade analysis
     trade_info = strat.analyzers.tradeanalyzer.get_analysis()
+    print("\n\n\n\n=================",trade_info,"\n\n\n")
     total_trades = trade_info.total.closed
     trade_dates = [t['date'] for t in strat.trades]
     num_days = (max(trade_dates) - min(trade_dates)).days

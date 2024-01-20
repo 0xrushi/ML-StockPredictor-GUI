@@ -39,6 +39,9 @@ import backtrader as bt
 # from models import train_model, test_model
 from Models.predictive_sma20_crossover_model import PredictiveSma20CrossoverModel
 from Models.predictive_macd_crossover_model import PredictiveMacdCrossoverModel
+from Models.bollinger_bands_metalabel import BollingerBandsMetalabel
+from Models.rolling_precision_recall_model import RollingPrecisionRecallModel
+
 from strategies.backtesting import backtest_strategy
 from utils import setup_logger
 
@@ -121,8 +124,10 @@ def main():
     # Drop down to select model/strategy
     model_names = [
         "PredictiveSma20CrossoverModel",
-        "PredictiveMacdCrossoverModel",
-    ]  # Add all your model names
+        "RollingPrecisionRecallModel",
+        'BollingerBandsMetalabel',
+        "PredictiveMacdCrossoverModel"
+    ] # Add all your model names
     selected_model_name = st.selectbox("Select a Model", model_names)
     if selected_model_name:
         selected_model_class = globals()[selected_model_name]
@@ -133,8 +138,11 @@ def main():
         # model = PredictiveMacdCrossoverModel(selected_option, train_until)
         model = selected_model_class(selected_option, train_until)
         model_results = model.run_train()
-        backtest_strategy(model_results["df_test"])
-
+        print(model_results["df_test"])
+        try:
+            backtest_strategy(model_results["df_test"])
+        except:
+            st.write("backstrategy didn't worked")
     with st.expander("Test Model"):
         last_n_days = st.text_input("Last N Days", "30")
         test_date_input_handler()
@@ -165,23 +173,27 @@ def main():
             mlist=[]
             if check_if_today_starts_with_vertical_green_overlay(df_test):
                 mlist.append(selected_option)
+            else:
+                mlist=["don't buy"]
             print("Asdsadasdasdasda:    ",mlist)
             st.write(mlist) 
             
     with st.expander("Scan all stocks where the model recommends a buy today"):
         last_n_days = st.text_input("Last N Days", "30", key="txt2")
         mlist = []
+        mlist2 = []
         if st.button("Scan Stocks", key="btn3"):
             for so in options:
                 logger = setup_logger(so)
-
+                f=open("recommended.txt",'a')
                 try:
                     # model = PredictiveMacdCrossoverModel(so, train_until, data_source=st.session_state['data_source'])
                     model = selected_model_class(
                         so, train_until, data_source=st.session_state["data_source"]
                     )
                     model_results = model.run_train()
-
+                    backtest_strategy(model_results["df_test"])
+                    
                     # Log conditions and decisions
                     logger.info(
                         f"Train Accuracy: {model_results['train_accuracy']}, Test Accuracy: {model_results['test_accuracy']}"
@@ -202,12 +214,16 @@ def main():
                         if check_if_today_starts_with_vertical_green_overlay(df_test):
                             print("Asdsadasdasdasda:    ",mlist)
                             mlist.append(so)
+                            f.write(mlist)
                             logger.info(f"Buy recommendation for {so}")
                         else:
+                            mlist2.append(so)
                             logger.info(f"No recommendation for {so}")
                 except Exception as e:
                     logger.error(f"Failed to process {so} due to error: {str(e)}")
+            f.close()
         st.write(mlist)
+        st.write(mlist2)
 
 
 if __name__ == "__main__":

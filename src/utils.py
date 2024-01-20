@@ -102,14 +102,6 @@ def my_yf_download(ticker: str, cache_dir="cache", end: str=None):
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     
-    print("")
-    print("")
-    print("")
-    print("start  :   ",ticker)
-    print("")
-    print("")
-    print("")
-    print("")
     # File path for cached data
     file_path = os.path.join(cache_dir, f"{ticker}.csv")
     

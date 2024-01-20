@@ -47,7 +47,7 @@ def check_if_today_starts_with_vertical_green_overlay(df_test: pd.DataFrame) -> 
         ['Date']
         .agg(['first', 'last'])
     )
-    
+    print("df pattern  :       ",df_test[df_test['pred']].groupby(~df_test['pred']).head())
     last_date_included = False
     for idx, row in df_pattern.iterrows():
         if df_test.iloc[-1]['Date'] >= row['first'] and df_test.iloc[-1]['Date'] <= row['last'] and (row['last']!=row['first']):
