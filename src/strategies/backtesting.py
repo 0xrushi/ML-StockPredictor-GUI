@@ -172,12 +172,14 @@ def backtest_strategy(df: pd.DataFrame):
     total_profit = final_portfolio_value - initial_cash
 
     total_profit_percent = (total_profit / initial_cash) * 100
-    
+
     risk_free_rate = 0.02  # Assume risk-free rate of 2%
     
     df_trades = pd.DataFrame(strat.trades)
     df_trades.set_index('date', inplace=True)
     df_trades['cumulative_profit'] = df_trades['profit'].cumsum()
+    profitable_trades = df_trades[df_trades['profit'] > 0].shape[0]
+    loss_trades = df_trades[df_trades['profit'] < 0].shape[0]
     
     st.markdown(df_trades['profit'])
     
@@ -203,6 +205,8 @@ def backtest_strategy(df: pd.DataFrame):
     st.write(f"Average Trades per Day: {avg_trades_per_day}")
     st.write(f"Average Trades per Week: {avg_trades_per_week}")
     st.write(f"Average Trades per Month: {avg_trades_per_month}")
+    st.write(f"Total Profitable Trades: {profitable_trades}")
+    st.write(f"Total Loss Trades: {loss_trades}")
     st.write(f"Total Profit: \${total_profit}")
     st.write(f"Total Profit (%): {total_profit_percent}%")
 

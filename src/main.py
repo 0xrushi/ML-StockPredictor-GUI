@@ -141,8 +141,8 @@ def main():
         print(model_results["df_test"])
         try:
             backtest_strategy(model_results["df_test"])
-        except:
-            st.write("backstrategy didn't worked")
+        except Exception as e:
+            st.write("backstrategy didn't worked", e)
     with st.expander("Test Model"):
         last_n_days = st.text_input("Last N Days", "30")
         test_date_input_handler()
