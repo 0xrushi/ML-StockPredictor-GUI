@@ -180,6 +180,8 @@ def backtest_strategy(df: pd.DataFrame):
     df_trades['cumulative_profit'] = df_trades['profit'].cumsum()
     profitable_trades = df_trades[df_trades['profit'] > 0].shape[0]
     loss_trades = df_trades[df_trades['profit'] < 0].shape[0]
+    profits = df_trades[df_trades['profit'] > 0]['profit']
+    losses = df_trades[df_trades['profit'] < 0]['profit']
     
     st.markdown(df_trades['profit'])
     
@@ -199,6 +201,33 @@ def backtest_strategy(df: pd.DataFrame):
 
     # Display the plot in Streamlit
     st.pyplot(fig)
+    
+    
+    # Create the Profit/Loss Histogram
+    plt.figure(figsize=(10, 6))
+    plt.hist(df_trades['profit'], bins=30, color='skyblue', alpha=0.7)
+    plt.title('Profit/Loss Distribution')
+    plt.xlabel('Profit/Loss')
+    plt.ylabel('Number of Trades')
+    plt.axvline(x=0, color='grey', linestyle='--')
+    plt.grid(True)
+    st.pyplot()
+    
+    # Profits and losses box plots
+    combined_profit_loss = pd.concat([profits.rename('Value'), losses.rename('Value')], axis=0)
+    combined_profit_loss = combined_profit_loss.to_frame()
+    combined_profit_loss['Type'] = ['Profit' if v > 0 else 'Loss' for v in combined_profit_loss['Value']]
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(y='Value', x='Type', data=combined_profit_loss, palette=['lightgreen', 'salmon'])
+    plt.title('Box Plot of Profits and Losses')
+    plt.xlabel('')
+    plt.ylabel('Profit/Loss Value')
+    plt.grid(True)
+    # Show legend
+    handles, _ = plt.gca().get_legend_handles_labels()
+    plt.legend(handles, ['Profits', 'Losses'], title='Type')
+    st.pyplot()
+    
     st.write(f"Sharpe Ratio: {sharpe_ratio}")
     st.write('Average Profit:', average_profit)
     st.write('Standard Deviation of Profit:', std_dev_profit)
